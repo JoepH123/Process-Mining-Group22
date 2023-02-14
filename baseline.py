@@ -29,14 +29,28 @@ def load_dataset():
     # load the data
     train_data = pd.read_csv(TRAINING_DATA_PATH)
     test_data = pd.read_csv(TEST_DATA_PATH)
+    
+    # TODO: figure out the right split so that the test set isn't empty
+    # remove cases that overlap
+    # use a list to modify the test frame after iteration
+    # overlapping_cases = []
+    # for case_id in test_data[CASE_ID_COLUMN].unique():
+    #     if case_id in train_data[CASE_ID_COLUMN] :
+    #         # print(case_id)
+    #         overlapping_cases.append(case_id)
+            
+    # for case_id in overlapping_cases:
+    #     train_data = train_data[train_data[CASE_ID_COLUMN] != case_id]
+    #     test_data = test_data[test_data[CASE_ID_COLUMN] != case_id]
+
+    # Ideally this should not be zero
+    # print(test_data.size)
+
     # change the event time:timestamp to datetime
     train_data[CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         train_data[CASE_TIMESTAMP_COLUMN])
     test_data[CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         test_data[CASE_TIMESTAMP_COLUMN])
-    # # TODO: remove cases that overlap
-    # for case_id in test_data[CASE_ID_COLUMN].unique():
-    #     if test_data[CASE_ID_COLUMN]
 
     # get the event that follows the current one for each case (row), and the time elapsed
     train_data['time until next event'] = - train_data.groupby(
