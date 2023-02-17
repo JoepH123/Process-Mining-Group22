@@ -3,19 +3,6 @@ import copy
 import pandas as pd
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# ----------------------CONSTANTS----------------------------------
-"""The path to the training set, as outputted by 'xes2csv.jar'."""
-TRAINING_DATA_PATH = './Datasets/BPI_Challenge_2012-training.csv'
-"""The path to the testing set, as outputted by 'xes2csv.jar'."""
-TEST_DATA_PATH = './Datasets/BPI_Challenge_2012-test.csv'
-"""The identifier of dataset column holding the case ID."""
-CASE_ID_COLUMN = 'case concept:name'
-"""The identifier of dataset column holding the case position/state."""
-CASE_POSITION_COLUMN = 'event concept:name'
-"""The identifier of dataset column holding the timestamp."""
-CASE_TIMESTAMP_COLUMN = 'event time:timestamp'
-
-
 def load_dataset():
     """Loads the dataset, fixes the timestamps and adds columns 
     for actual results.
