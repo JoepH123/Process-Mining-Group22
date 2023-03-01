@@ -71,7 +71,7 @@ def train_baseline_model(train_data_in):
 def main():
     start_time = time.process_time()
     # do this if the files are not split already
-    # splitter.split_dataset(0.2)
+    splitter.split_dataset(0.2)
     # new_time = time.process_time()
     # print("Time to split dataset (in seconds): ", new_time - start_time)
     # start_time = new_time

@@ -67,14 +67,13 @@ def split_dataset(test_split_ratio: float):
     # NOTE: this way of filtering possibly throws away 1 case more than neeeded
     # but rewriting it to not do so would add like 20 lines of code
 
-    # filter out only the points that yield a test set less than the split ratio
-    countframe = countframe[countframe[CASE_START_COUNT] /
-        (countframe[CASE_START_COUNT] + countframe[CASE_END_COUNT]) < test_split_ratio]
 
-    # get the timestamp of the first such point,
-    # as it yields the smallest test set that doesn't satisfy us
-    # if it's removed from the test set
-    split_timestamp = countframe.iloc[0][constants.CASE_TIMESTAMP_COLUMN]
+    # filter out only the points that yield a test set of at least the split ratio
+    countframe = countframe[countframe[CASE_START_COUNT]/(countframe[CASE_START_COUNT] +
+        countframe[CASE_END_COUNT]) > test_split_ratio]
+
+    # get the timestamp of the last such point, as it yields the smallest test set
+    split_timestamp = countframe.iloc[-1][constants.CASE_TIMESTAMP_COLUMN]
 
     # split the data
     train_data = copy.deepcopy(dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] < split_timestamp])
