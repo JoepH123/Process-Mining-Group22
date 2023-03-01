@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 def split_dataset(test_split_ratio: float):
-    """Converts the raw dataset into test and train .csv files, 
-    so that the relation of cases in each is as close as possible 
+    """Converts the raw dataset into test and train .csv files,
+    so that the relation of cases in each is as close as possible
     to the parametrized value and overlapping cases are removed.
     The csv files are saved in the same directory as the raw dataset.
 
@@ -16,7 +16,7 @@ def split_dataset(test_split_ratio: float):
     """
     dataframe = pm4py.convert_to_dataframe(pm4py.read_xes(constants.RAW_DATASET_PATH))
 
-    # set when printing head to see all columns 
+    # set when printing head to see all columns
     # pd.set_option('display.max_columns', None)
 
     # change the event time:timestamp to datetime
@@ -62,13 +62,13 @@ def split_dataset(test_split_ratio: float):
 
     countframe[CASE_START_COUNT].fillna(method='ffill', inplace = True)
     countframe[CASE_END_COUNT].fillna(method='ffill', inplace = True)
-    
+
 
     # NOTE: this way of filtering possibly throws away 1 case more than neeeded
     # but rewriting it to not do so would add like 20 lines of code
 
     # filter out only the points that yield a test set less than the split ratio
-    countframe = countframe[countframe[CASE_START_COUNT] / 
+    countframe = countframe[countframe[CASE_START_COUNT] /
         (countframe[CASE_START_COUNT] + countframe[CASE_END_COUNT]) < test_split_ratio]
 
     # get the timestamp of the first such point,
@@ -79,7 +79,7 @@ def split_dataset(test_split_ratio: float):
     # split the data
     train_data = copy.deepcopy(dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] < split_timestamp])
     test_data = copy.deepcopy(dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] >= split_timestamp])
-    
+
     # remove cases that overlap
     # use a list to modify the test frame after iteration
     overlapping_cases = []

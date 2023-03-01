@@ -1,17 +1,17 @@
 
 import copy
+import time
 import pandas as pd
 from sklearn.metrics import accuracy_score, mean_absolute_error
 import splitter, constants
 
 def clean_mode(x):
-    """If there is no mode, return None. Otherwise, return the first mode in the list of modes.
+    """Returns the first mode in the list of modes, or None if it's empty.
 
-    Args:
-        x (object): List of modes
-
-    Returns:
-        object: The first mode in the list of modes, or None if there is no mode
+    :param x: the list of modes
+    :type x: list or type convertable with tolist()
+    :return: The first element of x, if it exists, None otherwise
+    :rtype: None or type of the first element in x
     """
     if x.tolist() == []:
         return None
@@ -30,7 +30,7 @@ def train_baseline_model(train_data_in):
     :param train_data_in: The dataframe containing the training set,
         with the actual values inside 'next event' and 'time until next event'
     :type train_data_in: DataFrame
-    :return: A tuple containing a DataFrame predicting the next event, and a 
+    :return: A tuple containing a DataFrame predicting the next event, and a
         DataFrame predicting the time until next event
     :rtype: Tuple of 2 DataFrames
     """
@@ -69,14 +69,22 @@ def train_baseline_model(train_data_in):
 
 
 def main():
+    start_time = time.process_time()
     # do this if the files are not split already
     # splitter.split_dataset(0.2)
-    
+    # new_time = time.process_time()
+    # print("Time to split dataset (in seconds): ", new_time - start_time)
+    # start_time = new_time
+
     train_data = pd.read_csv(constants.TRAINING_DATA_PATH)
     test_data = pd.read_csv(constants.TEST_DATA_PATH)
 
     baseline_next_event_df, baseline_time_elapsed_df = train_baseline_model(
         train_data)
+
+    new_time = time.process_time()
+    print("Time to train baseline model (in seconds): ", new_time - start_time)
+    start_time = new_time
 
     # make predictions for test set
     test_data = test_data.merge(
@@ -94,6 +102,9 @@ def main():
     print("Mean absolute error of baseline for test set (time until next event): ", mean_absolute_error(
         test_data['time until next event'], test_data['predicted time until next event']))
 
+    new_time = time.process_time()
+    print("Time to predict baseline model (in seconds): ", new_time - start_time)
+    start_time = new_time
 
 if __name__ == "__main__":
     main()
