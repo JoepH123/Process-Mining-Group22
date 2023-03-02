@@ -71,13 +71,18 @@ def train_baseline_model(train_data_in):
 def main():
     start_time = time.process_time()
     # do this if the files are not split already
-    splitter.split_dataset(0.2)
+    # splitter.convert_raw_dataset(constants.RAW_DATASET_PATH, constants.CONVERTED_DATASET_PATH)
     # new_time = time.process_time()
-    # print("Time to split dataset (in seconds): ", new_time - start_time)
+    # print("Time to convert dataset (in seconds): ", new_time - start_time)
     # start_time = new_time
 
-    train_data = pd.read_csv(constants.TRAINING_DATA_PATH)
-    test_data = pd.read_csv(constants.TEST_DATA_PATH)
+    full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
+
+    train_data, test_data = splitter.split_dataset(full_data, 0.2)
+
+    new_time = time.process_time()
+    print("Time to split dataset (in seconds): ", new_time - start_time)
+    start_time = new_time
 
     baseline_next_event_df, baseline_time_elapsed_df = train_baseline_model(
         train_data)

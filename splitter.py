@@ -4,17 +4,16 @@ import copy
 import numpy as np
 import pandas as pd
 
-def split_dataset(test_split_ratio: float):
-    """Converts the raw dataset into test and train .csv files,
-    so that the relation of cases in each is as close as possible
-    to the parametrized value and overlapping cases are removed.
-    The csv files are saved in the same directory as the raw dataset.
+def convert_raw_dataset(raw_path, converted_path):
+    """Converts the raw dataset (.xes.gz) into a .csv file. Adds some
+    preprocessing artifacts.
 
-    :param test_split_ratio: target portion of cases not dropped
-        in the test dataset
-    :type split_ratio: float
+    :param raw_path: the raw dataset path
+    :type raw_path: string
+    :param converted_path: converted dataset path to save the result
+    :type converted_path: string
     """
-    dataframe = pm4py.convert_to_dataframe(pm4py.read_xes(constants.RAW_DATASET_PATH))
+    dataframe = pm4py.convert_to_dataframe(pm4py.read_xes(raw_path))
 
     # set when printing head to see all columns
     # pd.set_option('display.max_columns', None)
@@ -35,67 +34,81 @@ def split_dataset(test_split_ratio: float):
     dataframe[constants.CASE_STEP_NUMBER_COLUMN] = dataframe.groupby(
         constants.CASE_ID_COLUMN).cumcount()
 
-    countframe = copy.deepcopy(dataframe)
-
-    # constants are local because we will drop the columns by the end
-    CASE_STEP_NUMBER_INVERSE_COLUMN = 'number of activity in case inverse'
-    CASE_START_COUNT = 'case start count'
-    CASE_END_COUNT = 'case end count'
-
     # how many events are left until the end of the case
-    countframe[CASE_STEP_NUMBER_INVERSE_COLUMN] = countframe.groupby(
+    dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] = dataframe.groupby(
         constants.CASE_ID_COLUMN).cumcount(ascending=False)
 
-    # get only the events that start or end a case
-    countframe = countframe[(countframe[constants.CASE_STEP_NUMBER_COLUMN] == 0) |
-        (countframe[CASE_STEP_NUMBER_INVERSE_COLUMN] == 0)]
+    # # get only the events that start or end a case
+    # countframe = dataframe[(dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0) |
+    #     (dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0)]
 
     # how many cases start after the current event, inclusive
-    countframe[CASE_START_COUNT] = countframe[
-        countframe[constants.CASE_STEP_NUMBER_COLUMN] == 0].groupby(
+    dataframe[constants.CASE_START_COUNT] = dataframe[
+        dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0].groupby(
             constants.CASE_STEP_NUMBER_COLUMN).cumcount(ascending=False) + 1
 
     # how many cases end before the current event, inclusive
-    countframe[CASE_END_COUNT] = countframe[
-        countframe[CASE_STEP_NUMBER_INVERSE_COLUMN] == 0].groupby(
-            CASE_STEP_NUMBER_INVERSE_COLUMN).cumcount() + 1
+    dataframe[constants.CASE_END_COUNT] = dataframe[
+        dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0].groupby(
+            constants.CASE_STEP_NUMBER_INVERSE_COLUMN).cumcount() + 1
 
-    countframe[CASE_START_COUNT].fillna(method='ffill', inplace = True)
-    countframe[CASE_END_COUNT].fillna(method='ffill', inplace = True)
+    dataframe[constants.CASE_START_COUNT].fillna(method='ffill', inplace = True)
+    dataframe[constants.CASE_END_COUNT].fillna(method='ffill', inplace = True)
 
+    print("shape of converted dataset: ", dataframe.shape)
+
+    dataframe.to_csv(converted_path)
+
+def split_dataset(dataframe: pd.DataFrame, test_split_ratio: float):
+    """Splits the given data frame into two parts,
+    so that the relation of cases in the second part to the whole
+    is as close as possible to the parametrized value.
+    Overlapping cases are removed.
+
+    :param dataframe: the data frame to be split. It is not altered in the process.
+    :type dataframe: pd.DataFrame
+    :param test_split_ratio: target portion of cases not dropped
+        in the second half
+    :type split_ratio: float
+    :return: a tuple of two data frames, corresponding to each part
+    :rtype: tuple(pd.DataFrame, pd.DataFrame)
+    """
 
     # NOTE: this way of filtering possibly throws away 1 case more than neeeded
     # but rewriting it to not do so would add like 20 lines of code
 
+    # print("shape of initial data set: ", dataframe.shape)
 
     # filter out only the points that yield a test set of at least the split ratio
-    countframe = countframe[countframe[CASE_START_COUNT]/(countframe[CASE_START_COUNT] +
-        countframe[CASE_END_COUNT]) > test_split_ratio]
+    countframe = dataframe[dataframe[constants.CASE_START_COUNT]/(dataframe[constants.CASE_START_COUNT] +
+        dataframe[constants.CASE_END_COUNT]) > test_split_ratio]
 
     # get the timestamp of the last such point, as it yields the smallest test set
     split_timestamp = countframe.iloc[-1][constants.CASE_TIMESTAMP_COLUMN]
 
     # split the data
-    train_data = copy.deepcopy(dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] < split_timestamp])
-    test_data = copy.deepcopy(dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] >= split_timestamp])
+    first_part = dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] < split_timestamp]
+    second_part = dataframe[dataframe[constants.CASE_TIMESTAMP_COLUMN] >= split_timestamp]
+
+    # print("shape of initial train set: ", first_part.shape)
+    # print("shape of initial test set: ", second_part.shape)
 
     # remove cases that overlap
     # use a list to modify the test frame after iteration
     overlapping_cases = []
-    for case_id in test_data[constants.CASE_ID_COLUMN].unique():
-        if case_id in train_data[constants.CASE_ID_COLUMN].values :
+    for case_id in second_part[constants.CASE_ID_COLUMN].unique():
+        if case_id in first_part[constants.CASE_ID_COLUMN].values :
             overlapping_cases.append(case_id)
 
     print("cases dropped: ", len(overlapping_cases))
 
-    train_data = train_data[~train_data[constants.CASE_ID_COLUMN].isin(overlapping_cases)]
-    test_data = test_data[~test_data[constants.CASE_ID_COLUMN].isin(overlapping_cases)]
+    first_part = first_part[~first_part[constants.CASE_ID_COLUMN].isin(overlapping_cases)]
+    second_part = second_part[~second_part[constants.CASE_ID_COLUMN].isin(overlapping_cases)]
 
     # Ideally this should not be zero
-    print("size of test set: ", test_data.size)
-
-    train_data.to_csv(constants.TRAINING_DATA_PATH)
-    test_data.to_csv(constants.TEST_DATA_PATH)
+    print("shape of train set: ", first_part.shape);
+    print("shape of test set: ", second_part.shape)
+    return first_part, second_part
 
 if __name__ == "__main__":
     split_dataset(0.2)
