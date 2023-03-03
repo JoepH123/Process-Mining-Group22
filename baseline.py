@@ -67,29 +67,38 @@ def train_baseline_model(train_data_in):
     print("-------------------------------------------------------------------")
     return next_event_df, time_elapsed_df
 
+def time_execution():
+    """A couroutine that prints a message it recieves through .send()
+    and the the seconds passed since the last time it was called.
+    """
+    start_time = time.process_time()
+    while True:
+        string = (yield)
+        new_time = time.process_time()
+        print(string, new_time - start_time)
+        start_time = new_time
+
+
 
 def main():
-    start_time = time.process_time()
+    # set up the timer
+    timer = time_execution()
+    timer.__next__()
+
     # do this if the files are not split already
     # splitter.convert_raw_dataset(constants.RAW_DATASET_PATH, constants.CONVERTED_DATASET_PATH)
-    # new_time = time.process_time()
-    # print("Time to convert dataset (in seconds): ", new_time - start_time)
-    # start_time = new_time
+    # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
 
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
 
-    new_time = time.process_time()
-    print("Time to split dataset (in seconds): ", new_time - start_time)
-    start_time = new_time
+    timer.send("Time to split dataset (in seconds): ")
 
     baseline_next_event_df, baseline_time_elapsed_df = train_baseline_model(
         train_data)
 
-    new_time = time.process_time()
-    print("Time to train baseline model (in seconds): ", new_time - start_time)
-    start_time = new_time
+    timer.send("Time to train baseline model (in seconds): ")
 
     # make predictions for test set
     test_data = test_data.merge(
@@ -107,9 +116,7 @@ def main():
     print("Mean absolute error of baseline for test set (time until next event): ", mean_absolute_error(
         test_data['time until next event'], test_data['predicted time until next event']))
 
-    new_time = time.process_time()
-    print("Time to predict baseline model (in seconds): ", new_time - start_time)
-    start_time = new_time
+    timer.send("Time to predict baseline model (in seconds): ")
 
 if __name__ == "__main__":
     main()
