@@ -23,6 +23,7 @@ def weekend_and_work_hours(dataframe, date_column:str, start_hours:int, stop_hou
             time_to_work_hours: Time (string) until the next work day starts (or 0 if its during working hours)
     :rtype: pd.DataFrame
     """
+    dataframe[date_column] = dataframe[date_column].apply(lambda x: x.replace(tzinfo=None))
     dataframe['time_since_week_start'] = dataframe[date_column].apply(lambda x: pd.Timedelta('{} days {}'.format(x.weekday(), x.time())))
     dataframe['weekend'] = dataframe[date_column].apply(lambda x: True if 4<x.weekday()<7 else True
                                                         if x.weekday() == 4 and x.hour>stop_hours-1 else True 
@@ -49,6 +50,7 @@ def national_holidays(dataframe, date_column:str, holiday_dates:list):
             is_holiday: Boolean value if its a national holiday or not
     :rtype: pd.DataFrame
     """
+    dataframe[date_column] = dataframe[date_column].apply(lambda x: x.replace(tzinfo=None))
     dataframe['time_until_next_holiday'] = dataframe[date_column].apply(lambda x: pd.Timedelta('0h0m') if x.date() in holiday_dates else 
                                                                             min(holiday - x.date() for holiday in holiday_dates if (holiday - x.date())>pd.Timedelta('0 days')))
     dataframe['is_holiday'] = dataframe[date_column].apply(lambda x: True if x.date() in holiday_dates else False)
