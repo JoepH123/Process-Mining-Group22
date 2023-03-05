@@ -31,7 +31,7 @@ def weekend_and_work_hours(dataframe, date_column:str, start_hours:int, stop_hou
     dataframe['work_time'] = dataframe[date_column].apply(lambda x: False if 4<x.weekday()<7 else True if start_hours<=x.hour<stop_hours else False)
     dataframe['time_to_work_hours'] = dataframe[date_column].apply(lambda x: pd.Timedelta('0h0m') if x.weekday()<5 and start_hours<=x.hour<stop_hours else
                                                                        datetime.datetime.combine(x.date(), datetime.time(start_hours,0,0,0)) - x if x.weekday()<5 and start_hours>x.hour else
-                                                                       datetime.datetime.combine(x.date()+datetime.timedelta(days = 1), datetime.time(stop_hours,0,0,0)) - x if x.weekday()<4 and stop_hours<=x.hour else
+                                                                       datetime.datetime.combine(x.date()+datetime.timedelta(days = 1), datetime.time(start_hours,0,0,0)) - x if x.weekday()<4 and stop_hours<=x.hour else
                                                                         datetime.datetime.combine((x.date()+datetime.timedelta(days = 7-x.weekday())), datetime.time(start_hours,0,0,0)) - x) 
     return dataframe
 
