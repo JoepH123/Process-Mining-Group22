@@ -52,23 +52,25 @@ def convert_raw_dataset(raw_path, converted_path):
         dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0].groupby(
             constants.CASE_STEP_NUMBER_INVERSE_COLUMN).cumcount() + 1
 
-    dataframe[constants.CASE_START_COUNT].fillna(method='ffill', inplace = True)
+    dataframe.at[-1, constants.CASE_START_COUNT] = 0
+    dataframe.at[0, constants.CASE_END_COUNT] = 0
+    dataframe[constants.CASE_START_COUNT].fillna(method='bfill', inplace = True)
     dataframe[constants.CASE_END_COUNT].fillna(method='ffill', inplace = True)
-
     print("shape of converted dataset: ", dataframe.shape)
 
     dataframe.to_csv(converted_path)
 
-def split_dataset(dataframe: pd.DataFrame, test_split_ratio: float):
+def split_dataset(dataframe: pd.DataFrame, split_ratio: float):
     """Splits the given data frame into two parts,
     so that the relation of cases in the second part to the whole
     is as close as possible to the parametrized value.
     Overlapping cases are removed.
 
-    :param dataframe: the data frame to be split. It is not altered in the process.
+    :param dataframe: the data frame to be split, with artifacts showing the percentile
+    of each case. It is not altered in the process.
     :type dataframe: pd.DataFrame
-    :param test_split_ratio: target portion of cases not dropped
-        in the second half
+    :param split_ratio: out of the initial dataset, cases of which last percentile
+    should be in the second part
     :type split_ratio: float
     :return: a tuple of two data frames, corresponding to each part
     :rtype: tuple(pd.DataFrame, pd.DataFrame)
@@ -79,11 +81,11 @@ def split_dataset(dataframe: pd.DataFrame, test_split_ratio: float):
 
     # print("shape of initial data set: ", dataframe.shape)
 
-    # filter out only the points that yield a test set of at least the split ratio
+    # filter out only the points that yield a second part of at least the split ratio
     countframe = dataframe[dataframe[constants.CASE_START_COUNT]/(dataframe[constants.CASE_START_COUNT] +
-        dataframe[constants.CASE_END_COUNT]) > test_split_ratio]
+        dataframe[constants.CASE_END_COUNT]) >= split_ratio]
 
-    # get the timestamp of the last such point, as it yields the smallest test set
+    # get the timestamp of the last such point, as it yields the smallest set
     split_timestamp = countframe.iloc[-1][constants.CASE_TIMESTAMP_COLUMN]
 
     # split the data
@@ -109,6 +111,19 @@ def split_dataset(dataframe: pd.DataFrame, test_split_ratio: float):
     print("shape of train set: ", first_part.shape);
     print("shape of test set: ", second_part.shape)
     return first_part, second_part
+
+def get_percentile(entry: pd.Series):
+    print(entry[constants.CASE_START_COUNT])
+    print((entry[constants.CASE_START_COUNT] +
+        entry[constants.CASE_END_COUNT]))
+    return entry[constants.CASE_START_COUNT]/(entry[constants.CASE_START_COUNT] +
+        entry[constants.CASE_END_COUNT])
+
+def time_series_split(dataframe: pd.DataFrame, k: int):
+    begin_percentile = get_percentile(dataframe.iloc[0])
+    end_percentile = get_percentile(dataframe.iloc[-1])
+    print("Begin percentile: ", begin_percentile)
+    print("End percentile: ", end_percentile)
 
 if __name__ == "__main__":
     split_dataset(0.2)
