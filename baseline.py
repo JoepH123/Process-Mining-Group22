@@ -90,8 +90,9 @@ def main():
     # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
-    splitter.time_series_split(full_data, 5)
+
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
+    splitter.time_series_split(train_data, 5)
 
     timer.send("Time to split dataset (in seconds): ")
 
