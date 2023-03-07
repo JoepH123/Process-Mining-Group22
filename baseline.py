@@ -174,9 +174,9 @@ def main():
 
     # calculate performance for test set
     print("-------------------------------------------------------------------")
-    print('Train set:')
-    classification_performance(train_data, 'conf_matrix_train.png')
-    regression_performance(train_data)
+    print('Test set:')
+    classification_performance(test_data, 'conf_matrix_test.png')
+    regression_performance(test_data)
     print("-------------------------------------------------------------------")
 
     timer.send("Time to predict baseline model (in seconds): ")
