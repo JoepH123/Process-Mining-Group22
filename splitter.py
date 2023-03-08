@@ -122,8 +122,35 @@ def get_percentile(entry: pd.Series):
 def time_series_split(dataframe: pd.DataFrame, k: int):
     begin_percentile = get_percentile(dataframe.iloc[0])
     end_percentile = get_percentile(dataframe.iloc[-1])
-    print("Begin percentile: ", begin_percentile)
-    print("End percentile: ", end_percentile)
+    # print("Begin percentile ", begin_percentile)
+    # print("End percentile ", end_percentile)
+
+    partition_list = []
+    for i in range(1, k):
+        current_percentile = (begin_percentile - end_percentile) * i/k + end_percentile
+        # print("Current percentile ", current_percentile)
+        first_part, new_part = split_dataset(dataframe, current_percentile)
+        # remove the rows that are already in a partition
+        for existing_partition in partition_list:
+            new_part = new_part[~new_part.index.isin(existing_partition.index)]
+        partition_list.insert(0, new_part)
+    # get the rest as well
+    partition_list.insert(0, first_part)
+
+    training_data = []
+    test_data = []
+    df_list_cumulative = [] # for efficient multiple appending
+    for i in range(0, k-1):
+        df_list_cumulative.append(partition_list[i])
+        training_data.append(pd.concat(df_list_cumulative))
+        test_data.append(partition_list[i+1])
+
+    # for frame in training_data:
+    #     print("Shape of train dataframe ", frame.shape)
+
+    # for frame in test_data:
+    #     print("Shape of test dataframe ", frame.shape)
+
 
 if __name__ == "__main__":
     split_dataset(0.2)

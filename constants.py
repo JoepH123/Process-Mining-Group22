@@ -3,6 +3,8 @@
 RAW_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
 """The path to the converted dataset, in .csv"""
 CONVERTED_DATASET_PATH = './Datasets/BPI_Challenge_2012.csv'
+"""The path to the dataset with additional columns, in .csv"""
+GLOBAL_DATASET_PATH = './Datasets/dataset_holiday_weekday.csv'
 """The path to the training set, as outputted by 'xes2csv.jar'."""
 TRAINING_DATA_PATH = './Datasets/BPI_Challenge_2012-training.csv'
 """The path to the testing set, as outputted by 'xes2csv.jar'."""

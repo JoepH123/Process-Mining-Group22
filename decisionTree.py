@@ -13,7 +13,7 @@ def train_activity_model(train_data_in, clf):
     train_data = copy.deepcopy(train_data_in).rename(columns={'concept:name': 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
     train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
-    
+
     X = train_data[['activity number in case',
        'number of activity in case inverse', 'case start count',
        'case end count', 'A_ACCEPTED', 'A_ACTIVATED', 'A_APPROVED',
@@ -38,7 +38,7 @@ def train_time_model(train_data_in, clf):
     train_data = copy.deepcopy(train_data_in).rename(columns={'concept:name': 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
     train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
-    
+
     X = train_data[['activity number in case',
        'number of activity in case inverse', 'case start count',
        'case end count', 'A_ACCEPTED', 'A_ACTIVATED', 'A_APPROVED',
@@ -129,7 +129,7 @@ def test_all_models(train_data, test_data):
     print("Time to next activity:")
     reg = XGBRegressor()
     test_time_model(test_data, train_time_model(train_data, reg))
-    
+
 
 def time_execution():
     """A couroutine that prints a message it recieves through .send()
@@ -156,7 +156,7 @@ def main():
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
     splitter.time_series_split(full_data, 5)
     data = splitter.split_dataset(full_data, 0.2)
-    
+
     test_all_models(*data)
 
 if __name__ == "__main__":
