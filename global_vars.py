@@ -1,8 +1,5 @@
 import pandas as pd
-import numpy as np
-import time
 import datetime
-import matplotlib.pyplot as plt
 
 def weekend_and_work_hours(dataframe, date_column:str, start_hours:int, stop_hours:int):
     """
@@ -24,7 +21,7 @@ def weekend_and_work_hours(dataframe, date_column:str, start_hours:int, stop_hou
     :rtype: pd.DataFrame
     """
     dataframe[date_column] = dataframe[date_column].apply(lambda x: x.replace(tzinfo=None))
-    dataframe['time_since_week_start'] = dataframe[date_column].apply(lambda x: pd.Timedelta('{} days {}'.format(x.weekday(), x.time())))
+    dataframe['time_since_week_start'] = dataframe[date_column].apply(lambda x: pd.Timedelta(f'{x.total_seconds()}'))
     dataframe['weekend'] = dataframe[date_column].apply(lambda x: True if 4<x.weekday()<7 else True
                                                         if x.weekday() == 4 and x.hour>stop_hours-1 else True 
                                                         if x.weekday() == 0 and x.hour<start_hours else False)
