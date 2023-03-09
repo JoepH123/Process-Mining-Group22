@@ -133,7 +133,7 @@ def test_time_model(test_data, clf, columns):
     
     return 1
 
-def compare_all_models(train_data, test_data):
+def compare_all_models(train_data, test_data, timer):
     cols = ['activity number in case', 'case end count',
             'A_ACCEPTED', 'A_ACTIVATED', 'A_APPROVED',
        'A_CANCELLED', 'A_DECLINED', 'A_FINALIZED', 'A_PARTLYSUBMITTED',
@@ -159,34 +159,55 @@ def compare_all_models(train_data, test_data):
     test_data = test_data.drop('name', axis=1).join(names_ohe).dropna()
     test_data['next_activity_id'] = pd.factorize(test_data['next event'])[0]
 
-
+    timer.send("Time to prepare columns (in seconds): ")
+    
     print("Decision Tree:")
     print("-----------------------------")
     print("Next activity:")
     clf = DecisionTreeClassifier()
-    dec = train_activity_model(train_data, clf, cols)
-    test_activity_model(test_data, dec, cols) 
+    dec_tree_clas = train_activity_model(train_data, clf, cols)
+
+    timer.send("Time to train decision tree classifier (in seconds): ")
+
+    test_activity_model(test_data, dec_tree_clas, cols) 
     
+    timer.send("Time to evaluate decision tree classifier (in seconds): ")
+
     print("Random Forest:")
     print("-----------------------------")
     print("Next activity:")
     clf = RandomForestClassifier()
-    test_activity_model(test_data, train_activity_model(train_data, clf, cols), cols)
-    
+    rand_forest_class = train_activity_model(train_data, clf, cols)
 
+    timer.send("Time to train random forest classifier (in seconds): ")
+
+    test_activity_model(test_data, rand_forest_class, cols)
+    
+    timer.send("Time to evaluation random forest classifier (in seconds): ")
 
     print("Linear Regression:")
     print("-----------------------------")
     print("Time to next activity:")
     reg = LinearRegression()
-    test_time_model(test_data, train_time_model(train_data, reg, cols), cols)
+    lin_regr = train_time_model(train_data, reg, cols)
+
+    timer.send("Time to train linear regression (in seconds): ")
+
+    test_time_model(test_data, lin_regr, cols)
+
+    timer.send("Time to evaluate linear regression (in seconds): ")
 
     print("Random Forest Regression:")
     print("-----------------------------")
     print("Time to next activity:")
     reg = RandomForestRegressor()
-    test_time_model(test_data, train_time_model(train_data, reg, cols), cols)
+    rand_forest_regr = train_time_model(train_data, reg, cols)
 
+    timer.send("Time to train random forest regression (in seconds): ")
+
+    test_time_model(test_data, rand_forest_regr, cols)
+
+    timer.send("Time to evaluate random forest regression (in seconds): ")
 
     #print("XGBoost:")
     #print("-----------------------------")
@@ -205,7 +226,7 @@ def compare_all_models(train_data, test_data):
 
 
     print("Permutation importance (Decision Tree):")
-    importance(dec, *train_data)
+    importance(dec_tree_clas, *train_data)
     
 
 def time_execution():
@@ -249,7 +270,9 @@ def main():
     splitter.time_series_split(full_data, 5)
     data = splitter.split_dataset(full_data, 0.2)
     
-    compare_all_models(*data)
+    timer.send("Time to split dataset (in seconds): ")
+
+    compare_all_models(*data, timer)
 
 if __name__ == "__main__":
     main()

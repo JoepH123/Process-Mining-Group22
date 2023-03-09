@@ -86,7 +86,7 @@ def regression_performance(data):
         (data_no_zero['time until next event'] - data_no_zero['predicted time until next event']) / data_no_zero['time until next event'])), axis=0)))
 
 
-def train_baseline_model(train_data_in):
+def train_baseline_model(train_data_in, timer):
     """Trains the baseline prediction model. It uses the current case position
     as input and predicts the next case position and time until next position.
     For a given case position, the most common next position in the dataset
@@ -105,6 +105,8 @@ def train_baseline_model(train_data_in):
     # copy so we don't modify the original training set
     train_data = copy.deepcopy(train_data_in)
 
+    timer.send("Time to deepcopy (in seconds): ")
+
     # get the most frequent event for each case position
     next_event_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
         'next event'].agg(lambda x: clean_mode(pd.Series.mode(x))))
@@ -113,6 +115,8 @@ def train_baseline_model(train_data_in):
     train_data = train_data.merge(
         next_event_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
 
+    timer.send("Time to train baseline model classification (in seconds): ")
+
     # get the average of the time elapsed between the events at case positions i and i+1
     time_elapsed_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
         'time until next event'].agg('mean'))
@@ -120,6 +124,8 @@ def train_baseline_model(train_data_in):
         columns={'time until next event': 'predicted time until next event'}, inplace=True)
     train_data = train_data.merge(
         time_elapsed_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
+
+    timer.send("Time to train baseline model time (in seconds): ")
 
     # this datafarame stores all the rows where time until next event and next event are null
     # we should decide what to do with it, for now i remove missing values
@@ -164,9 +170,9 @@ def main():
     timer.send("Time to split dataset (in seconds): ")
 
     baseline_next_event_df, baseline_time_elapsed_df = train_baseline_model(
-        train_data)
+        train_data, timer)
 
-    timer.send("Time to train baseline model (in seconds): ")
+    
 
     # make predictions for test set
     test_data = test_data.merge(
@@ -179,11 +185,15 @@ def main():
     # calculate performance for test set
     print("-------------------------------------------------------------------")
     print('Test set:')
+    timer.send("Time to prepare for evaluation baseline model (in seconds): ")
+
     classification_performance(test_data, 'conf_matrix_test.png')
+    timer.send("Time to evaluate baseline model classification (in seconds): ")
     regression_performance(test_data)
+    timer.send("Time to evaluate baseline model (in seconds): ")
     print("-------------------------------------------------------------------")
 
-    timer.send("Time to predict baseline model (in seconds): ")
+    
 
 if __name__ == "__main__":
     main()
