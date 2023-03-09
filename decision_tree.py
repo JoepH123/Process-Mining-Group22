@@ -52,7 +52,7 @@ def tune_rf_activity(train_data, columns):
     rf = RandomForestClassifier()
     rf_random = RandomizedSearchCV(estimator = rf, 
                                    param_distributions = random_grid, 
-                                   n_iter = 100, 
+                                   n_iter = 10, 
                                    cv = 3, 
                                    verbose=0, 
                                    random_state=42, 
