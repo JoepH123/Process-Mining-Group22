@@ -3,7 +3,7 @@ import copy
 import time
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score, mean_absolute_error, confusion_matrix as cm, classification_report, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix as cm, classification_report, precision_recall_fscore_support
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -76,10 +76,14 @@ def regression_performance(data):
     :type data: dataframe
     :return: None
     """
+    
     print("Mean absolute error (time until next event): ", mean_absolute_error(
         data['time until next event'], data['predicted time until next event']))
+    print("Root mean squared error: ", mean_squared_error(data['time until next event'], 
+        data['predicted time until next event'], squared=False))
+    data_no_zero = data[data['time until next event'] != 0]
     print("Root mean squared percentage error: ", np.sqrt(np.mean(np.square((
-        (data['time until next event'] - data['predicted time until next event']) / data['time until next event'])), axis=0)))
+        (data_no_zero['time until next event'] - data_no_zero['predicted time until next event']) / data_no_zero['time until next event'])), axis=0)))
 
 
 def train_baseline_model(train_data_in):
