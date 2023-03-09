@@ -45,10 +45,12 @@ def get_string_vectorizer(data):
     layer.adapt(data)
     return layer
 
-# def normalizer(data):
-#     layer = tf.keras.layers.Normalization(axis=None)
-#     layer.adapt(data)
-#     return layer(data)
+
+
+def normalizer(data):
+    layer = tf.keras.layers.Normalization(axis=None)
+    layer.adapt(data)
+    return layer(data)
 
 def preprocess_event_labels():
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
@@ -137,7 +139,15 @@ def preprocess_time():
     
     return X_train, y_train, X_test, y_test
 
-def preprocess_event():
+
+def get_one_hot_encoder(data):
+    # data = np.asarray(data).astype('str').reshape(-1,1)
+    enc = OneHotEncoder(handle_unknown='ignore')
+    enc.fit(data)
+    print(enc.categories_)
+    return enc
+
+def preprocess_event_old():
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
 
@@ -149,13 +159,13 @@ def preprocess_event():
     # label_encoder = get_label_encoder(full_data['next event'])
 
     vector_case_position_train = string_vectorizer(train_data[constants.CASE_POSITION_COLUMN])
-    case_step_number_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN]]
+    case_step_number_train = normalizer(train_data[[constants.CASE_STEP_NUMBER_COLUMN]])
 
     X_train = keras.layers.concatenate([vector_case_position_train, case_step_number_train])
     y_train = string_vectorizer_next(train_data['next event'])
 
     vector_case_position = string_vectorizer(test_data[constants.CASE_POSITION_COLUMN])
-    case_step_number = test_data[[constants.CASE_STEP_NUMBER_COLUMN]]
+    case_step_number = normalizer(test_data[[constants.CASE_STEP_NUMBER_COLUMN]])
 
     X_test = keras.layers.concatenate([vector_case_position, case_step_number])
     y_test = string_vectorizer_next(test_data['next event'])
@@ -168,6 +178,43 @@ def preprocess_event():
     # y_test = np.array(y_test).reshape(y_test.shape[0],1)
 
     return X_train, y_train, X_test, y_test
+
+def preprocess_event():
+    full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
+    train_data, test_data = splitter.split_dataset(full_data, 0.2)
+
+    train_data.dropna(inplace=True)
+    test_data.dropna(inplace=True)
+
+    enc = get_one_hot_encoder(full_data[[constants.CASE_POSITION_COLUMN]])
+    enc_next = get_one_hot_encoder(full_data[['next event']])
+
+    # string_vectorizer = get_string_vectorizer(full_data[constants.CASE_POSITION_COLUMN])
+    # string_vectorizer_next = get_string_vectorizer(full_data['next event'])
+    # label_encoder = get_label_encoder(full_data['next event'])
+
+    vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+    case_step_number_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN]]
+
+    X_train = keras.layers.concatenate([vector_case_position_train, case_step_number_train])
+    y_train = enc_next.transform(train_data[['next event']]).toarray()
+
+    vector_case_position = enc.transform(test_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+    case_step_number = test_data[[constants.CASE_STEP_NUMBER_COLUMN]]
+
+    X_test = keras.layers.concatenate([vector_case_position, case_step_number])
+    y_test = enc_next.transform(test_data[['next event']]).toarray()
+
+    X_train = np.array(X_train).reshape(X_train.shape[0], X_train.shape[1], 1)
+    X_test = np.array(X_test).reshape(X_test.shape[0], X_test.shape[1], 1)
+    print(X_train.shape)
+    print(X_test.shape)
+
+    print(y_train.shape, y_test.shape)
+    # y_train = np.array(y_train).reshape(y_train.shape[0],1)
+    # y_test = np.array(y_test).reshape(y_test.shape[0],1)
+
+    return X_train, y_train, X_test, y_test, enc_next
 
 def train_labels(X_train, y_train):
     # Initialising the RNN
@@ -209,33 +256,45 @@ def train(X_train, y_train):
     # Adding the output layer
     # For Full connection layer we use dense
     # As the output is 1D so we use unit=1
-    model.add(keras.layers.Dense(units = 25))
+    model.add(keras.layers.Dense(units = 24))
     # rmsprop = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08)
     model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics =['accuracy'])
-    model.fit(X_train, y_train, epochs = 5, batch_size = 50)
+    model.fit(X_train, y_train, epochs = 30, batch_size = 100)
     return model
 
 
-def test(X_test, y_test, model):
+def test(X_test, y_test, model, enc):
     predictions = model.predict(X_test)
     print(predictions)
+    y_test = enc.inverse_transform(y_test)
+    predictions = enc.inverse_transform(predictions)
+    
+
+    print(pd.DataFrame(y_test,columns=['next activity']))
+    print(pd.DataFrame(predictions, columns=['predicted next activity']))
+
+
+
+    y_test = pd.DataFrame(y_test,columns=['next activity']).join(pd.DataFrame(predictions, columns=['predicted next activity']))
+    # print(predictions)
     print(y_test)
-    print(model.evaluate(X_test, y_test))
+    # print(model.evaluate(X_test, y_test))
 
-def test_with_ready_model(X_test, y_test, file):
+def load_model(file):
     model = keras.models.load_model(file)
-    predictions = model.predict(X_test)
+    return model
 
-    test(X_test, y_test, model)
-
-def train_and_test(X_train, y_train, X_test, y_test, file=None):
+def train_model(X_train, y_train, X_test, y_test, file=None):
     model = train(X_train, y_train)
     if file:
         model.save(file)
-    test(X_test, y_test, model)
+    return model
 
 if __name__ == "__main__":
-    X_train, y_train, X_test, y_test = preprocess_event()
-
-    train_and_test(X_train, y_train, X_test, y_test, 'class_model.h5')
-    # test_with_ready_model(X_test, y_test, 'class_model.h5')
+    X_train, y_train, X_test, y_test, enc = preprocess_event()
+    print(X_train.shape)
+    print(X_test.shape)
+    # model = load_model('LSTM_models/class_model.h5')
+    model = train_model(X_train, y_train, X_test, y_test, 'LSTM_models/class_model.h5')
+    test(X_test, y_test, model, enc)
+    # test_with_ready_model(X_test, y_test, 'LSTM_models/class_model.h5')
