@@ -26,3 +26,6 @@ CASE_START_COUNT = 'case start count'
 """The identifier of dataset column counting the number of cases that end
 before the current event, inclusive."""
 CASE_END_COUNT = 'case end count'
+"""The identifier of dataset column counting the number of cases that are open
+after the current event happens."""
+ACTIVE_CASES = 'active cases'
