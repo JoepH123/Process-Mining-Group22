@@ -219,14 +219,14 @@ def compare_all_models(train_data, test_data, timer):
     #test_time_model(test_data, train_time_model(train_data, reg, cols), cols)
 
 
-    print("Random Forest Hyperparameter Tuning:")
-    print("-----------------------------")
-    print("Next activity:")
-    test_activity_model(test_data, tune_rf_activity(train_data, cols), cols)
+    # print("Random Forest Hyperparameter Tuning:")
+    # print("-----------------------------")
+    # print("Next activity:")
+    # test_activity_model(test_data, tune_rf_activity(train_data, cols), cols)
 
 
-    print("Permutation importance (Decision Tree):")
-    importance(dec_tree_clas, *train_data)
+    # print("Permutation importance (Decision Tree):")
+    # importance(dec_tree_clas, *train_data)
     
 
 def time_execution():
