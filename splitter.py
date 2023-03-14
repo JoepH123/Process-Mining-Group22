@@ -56,6 +56,11 @@ def convert_raw_dataset(raw_path, converted_path):
     dataframe.at[0, constants.CASE_END_COUNT] = 0
     dataframe[constants.CASE_START_COUNT].fillna(method='bfill', inplace = True)
     dataframe[constants.CASE_END_COUNT].fillna(method='ffill', inplace = True)
+
+    total_cases = full_data[constants.CASE_START_COUNT].loc[0]
+    full_data[constants.ACTIVE_CASES] = total_cases - full_data[constants.CASE_START_COUNT].shift(
+        periods = -1, fill_value=0) - full_data[constants.CASE_END_COUNT]
+
     print("shape of converted dataset: ", dataframe.shape)
 
     dataframe.to_csv(converted_path)
