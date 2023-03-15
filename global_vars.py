@@ -29,7 +29,7 @@ def obtain_holidays(country: str, years: Union[list, np.ndarray]):
     return holidays
 
 
-def time_based_columns(dataframe, date_column: str, start_hours: int, stop_hours: int, country='Netherlands'):
+def time_based_columns(dataframe, date_column: str, start_hours= 9, stop_hours= 17, country='Netherlands'):
     """
     Adds the extra columns regarding to the dates on which events happen. These are things like holidays, weekends & working hours
 
