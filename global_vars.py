@@ -82,4 +82,19 @@ def time_based_columns(dataframe, date_column: str, start_hours= 9, stop_hours= 
     if x.weekday() == 0 and x.hour < start_hours else False)
     return dataframe
 
+def add_liquidity(df, date_column):
+    df[date_column] = pd.to_datetime(df[date_column])
+    
+    df['year'] = df[date_column].dt.year
+    df['month'] = df[date_column].dt.month
+    df['day'] = df[date_column].dt.day
+    
+    df['total_amount'] = df.groupby(['year', 'month', 'day'], as_index=False).agg(total_amount=('case:AMOUNT_REQ', 'sum'))['total_amount']
+    
+    return df
 
+
+from constants import GLOBAL_DATASET_PATH
+
+df = pd.read_csv(GLOBAL_DATASET_PATH)
+add_liquidity(df, "time:timestamp")
