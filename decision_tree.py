@@ -141,8 +141,8 @@ def compare_all_models(train_data, test_data, timer):
        'O_CANCELLED', 'O_CREATED', 'O_DECLINED', 'O_SELECTED', 'O_SENT',
        'O_SENT_BACK', 'W_Afhandelen leads', 'W_Beoordelen fraude',
        'W_Completeren aanvraag', 'W_Nabellen incomplete dossiers',
-       'W_Nabellen offertes', 'W_Valideren aanvraag', 'time_until_next_holiday',
-       'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']
+       'W_Nabellen offertes', 'W_Valideren aanvraag', 'days_until_next_holiday',
+       'is_weekend', 'seconds_since_week_start', 'is_work_time', 'seconds_to_work_hours', 'is_holiday']
 
     print(train_data.columns)
     
@@ -241,18 +241,16 @@ def time_execution():
         start_time = new_time
 
 def correct_data(data):
-    li = data["time_until_next_holiday"]
-    data["time_until_next_holiday"] = [int(el.split(" ")[0]) for el in li]
     # time_since_week_start
     # time_to_work_hours
 
-    li = data["time_since_week_start"]
-    x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
-    data["week_start"] = x
+    #li = data["time_since_week_start"]
+    #x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
+    #data["week_start"] = x
     
-    li = data["time_to_work_hours"]
-    x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
-    data["work_hours"] = x
+    #li = data["time_to_work_hours"]
+    #x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
+    #data["work_hours"] = x
     return data
 
 
