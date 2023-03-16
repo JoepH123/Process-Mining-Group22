@@ -39,17 +39,17 @@ def preprocess_event_X(train_data, test_data, enc):
     # number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
 
     number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN]]
-    case_step_number_normalizer = normalizer(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
+    # case_step_number_normalizer = normalizer(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
     # case_end_count_normalizer = normalizer(number_data_train[['case end count']])
     # time_until_next_holiday_normalizer = normalizer(number_data_train[['time_until_next_holiday']])
     # week_start_normalizer = normalizer(number_data_train[['week_start']])
     # work_hours_normalizer = normalizer(number_data_train[['work_hours']])
 
-    number_data_train[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
+    # number_data_train[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
     # number_data_train['case end count'] = case_end_count_normalizer.transform(number_data_train[['case end count']])
     # number_data_train['time_until_next_holiday'] = time_until_next_holiday_normalizer.transform(number_data_train[['time_until_next_holiday']])
     # number_data_train['week_start'] = week_start_normalizer.transform(number_data_train[['week_start']])
-    # number_data_train['work_hours'] = work_hours_normalizer.transform(number_data_train[['work_hours']]) 
+    # number_data_train['work_hours'] = work_hours_normalizer.transform(number_data_train[['work_hours']])
 
     X_train = keras.layers.concatenate([vector_case_position_train, number_data_train])
 
@@ -57,7 +57,7 @@ def preprocess_event_X(train_data, test_data, enc):
     # number_data = test_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
     number_data = test_data[[constants.CASE_STEP_NUMBER_COLUMN]]
 
-    number_data[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data[[constants.CASE_STEP_NUMBER_COLUMN]])
+    # number_data[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data[[constants.CASE_STEP_NUMBER_COLUMN]])
     # number_data['case end count'] = case_end_count_normalizer.transform(number_data[['case end count']])
     # number_data['time_until_next_holiday'] = time_until_next_holiday_normalizer.transform(number_data[['time_until_next_holiday']])
     # number_data['week_start'] = week_start_normalizer.transform(number_data[['week_start']])
@@ -88,11 +88,11 @@ def preprocess_event_y_labels(train_data, test_data, label_encoder):
     return y_train, y_test
 
 def preprocess_event():
-    full_data = pd.read_csv(constants.GLOBAL_DATASET_PATH)
-    full_data = correct_data(full_data)
-    full_data.weekend = full_data.weekend.replace({True: 1, False: 0})
-    full_data.work_time = full_data.work_time.replace({True: 1, False: 0})
-    full_data.is_holiday = full_data.is_holiday.replace({True: 1, False: 0})
+    full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
+    # full_data = correct_data(full_data)
+    # full_data.is_weekend = full_data.is_weekend.replace({True: 1, False: 0})
+    # full_data.is_work_time = full_data.is_work_time.replace({True: 1, False: 0})
+    # full_data.is_holiday = full_data.is_holiday.replace({True: 1, False: 0})
 
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
 
@@ -130,7 +130,17 @@ def train_event(X_train, y_train):
     # model.add(keras.layers.Dense(units = 1))
     # model.compile(optimizer = 'adam', loss = 'mse', metrics =['accuracy'])
 
-    model.fit(X_train, y_train, epochs = 15, batch_size = 100)
+    history = model.fit(X_train, y_train, epochs = 10, batch_size = 100)
+
+    loss_values = history.history['loss']
+    epochs = range(1, len(loss_values)+1)
+
+    plt.plot(epochs, loss_values, label='Training Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.show()
     return model
 
 
