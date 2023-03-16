@@ -2,6 +2,7 @@
 import pandas as pd
 import time
 from datetime import datetime, timedelta
+import constants
 
 datapath = '../Data/Prepare&Load Data/'
 
@@ -13,7 +14,7 @@ def load_data(datapath):
     print("Load in the CSV file data") ###
     print("-------------------------") ###
     
-    data = pd.read_csv(datapath+'BPI_Challenge_2012/BPI_Challenge_2012-training.csv', parse_dates=['case REG_DATE', 'event time:timestamp'])
+    data = pd.read_csv(datapath+'BPI_Challenge_2012/BPI_Challenge_2012-training.csv', parse_dates=['case REG_DATE', constants.CASE_TIMESTAMP_COLUMN])
     
     print("Sort values based on event timestamp") ###
     
@@ -35,7 +36,7 @@ def compute_case_relative_time(data):
     start = time.time() ###
     
     data['case_relative_time'] = 0.0
-    all_cases = data['case concept:name'].unique().tolist()
+    all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     
     print("Compute case relative time") ###
     nr_cases = len(all_cases) ###
@@ -47,17 +48,17 @@ def compute_case_relative_time(data):
         if count % 1000 == 0: ###
             print(f"{(count / nr_cases) * 100}% Done") ###
         
-        case_data = data[data['case concept:name'] == case]
+        case_data = data[data[constants.CASE_ID_COLUMN] == case]
         number_of_rows = len(case_data.index)-1
         first_case_counter = 0
         for i, row in case_data.iterrows():
             if first_case_counter < 1: # first event of case
-                start_time = data.loc[i, 'event time:timestamp']
+                start_time = data.loc[i, constants.CASE_TIMESTAMP_COLUMN]
                 first_case_counter += 1
                 # print(start_time)
                 continue # Because the case_relative_time column was initialized with zeros
             else:
-                current_time = data.loc[i, 'event time:timestamp']
+                current_time = data.loc[i, constants.CASE_TIMESTAMP_COLUMN]
                 # print(current_time)
                 time_diff = current_time - start_time
                 # print(time_diff)
@@ -78,7 +79,7 @@ def compute_case_lag_event_column(data, lag, column_name):
     
     lag (int) : Integer that indicates the number of what number of lags we want 
                 to add as a column. e.g. lag=1, adds the column for the first lag 
-                of the 'event concept:name' column
+                of the constants.CASE_POSITION_COLUMN column
     column_name (str) : The name of the column for the lagged events. 
     """
     start = time.time() ###
@@ -86,13 +87,13 @@ def compute_case_lag_event_column(data, lag, column_name):
     
     data[column_name] = ''
     list_cases_with_lagged_column = []
-    all_cases = data['case concept:name'].unique().tolist()
+    all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     for case in all_cases:
-        case_data = data[data['case concept:name'] == case].copy()
-        case_data[column_name] = case_data['event concept:name'].shift(lag, fill_value='no_lagged_events')
+        case_data = data[data[constants.CASE_ID_COLUMN] == case].copy()
+        case_data[column_name] = case_data[constants.CASE_POSITION_COLUMN].shift(lag, fill_value='no_lagged_events')
         list_cases_with_lagged_column.append(case_data)
     total_data_with_added_column = pd.concat(list_cases_with_lagged_column)
-    data_with_new_column = total_data_with_added_column.sort_values(by=['event time:timestamp'])
+    data_with_new_column = total_data_with_added_column.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
     
     end = time.time() ###
     print(f"Function time taken: {end-start}") ###
@@ -113,7 +114,7 @@ def compute_workrate_employees(data):
     data['workrate'] = 0
     dict_workrate = {}
     data = data.fillna(0)
-    all_cases = data['case concept:name'].unique().tolist()
+    all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     
     print("Compute workrate of employees") ###
     nr_cases = len(all_cases) ###
@@ -125,11 +126,11 @@ def compute_workrate_employees(data):
         if count % 1000 == 0: ###
             print(f"{(count / nr_cases) * 100}% Done") ###
         
-        case_data = data[data['case concept:name'] == case]
+        case_data = data[data[constants.CASE_ID_COLUMN] == case]
         case_data.reset_index(inplace=True, drop=True)
         for i, row in case_data.iterrows():
             if i+1 < len(case_data.index):  # last event of a case can be ignored
-                emp_of_event = str(row['event org:resource'])
+                emp_of_event = str(row['org:resource'])
                 time_of_event = case_data.loc[i + 1, 'case_relative_time'] - case_data.loc[i, 'case_relative_time']
                 
                 if time_of_event < 0: ###
@@ -151,7 +152,7 @@ def compute_workrate_employees(data):
     print("Adding the workload as a column") ###
     
     for i in range(len(data.index)):
-        employee = data.loc[i, 'event org:resource']
+        employee = data.loc[i, 'org:resource']
         data.loc[i, 'workrate'] = dict_workrate[str(employee)]
         
     end = time.time() ###
@@ -160,18 +161,23 @@ def compute_workrate_employees(data):
         
     return data
 
+def compute_active_cases(data):
+    total_cases = data[constants.CASE_START_COUNT].loc[0]
+    data[constants.ACTIVE_CASES] = total_cases - data[constants.CASE_START_COUNT].shift(
+        periods = -1, fill_value=0) - data[constants.CASE_END_COUNT]
+    return data
 
-def pipeline(path):
+def pipeline(data):
     """
     This pipeline combines all the functions defined above. It makes sure that all steps are executed, and it returns
     the total time that the pipeline took to execute. 
     """
     total_start = time.time()
-    data = load_data(path)
     data = compute_case_relative_time(data)
     data = compute_case_lag_event_column(data, lag=1, column_name='first_lag_event')
     data = compute_case_lag_event_column(data, lag=2, column_name='second_lag_event')
     data = compute_workrate_employees(data)
+    data = compute_active_cases(data)
     total_end = time.time()
     print(f"Total pipeline time taken: {total_end-total_start}") ###
     return data

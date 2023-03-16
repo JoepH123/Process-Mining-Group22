@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix as cm, classification_report, precision_recall_fscore_support
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+from predictors_columns import pipeline
 import splitter, constants
 
 def clean_mode(x):
@@ -163,7 +163,11 @@ def main():
     # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
+    full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
+        full_data[constants.CASE_TIMESTAMP_COLUMN])
 
+    data = pipeline(full_data)
+    data.to_csv(constants.PIPELINED_DATASET_PATH)
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
     splitter.time_series_split(train_data, 5)
 
