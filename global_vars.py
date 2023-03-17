@@ -92,9 +92,3 @@ def add_liquidity(df, date_column):
     df['total_amount'] = df.groupby(['year', 'month', 'day'], as_index=False).agg(total_amount=('case:AMOUNT_REQ', 'sum'))['total_amount']
     
     return df
-
-
-from constants import GLOBAL_DATASET_PATH
-
-df = pd.read_csv(GLOBAL_DATASET_PATH)
-add_liquidity(df, "time:timestamp")
