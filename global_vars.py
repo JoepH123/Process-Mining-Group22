@@ -248,14 +248,4 @@ def resource_active_cases(dataframe, time_col='time:timestamp', event_col='conce
     else:
         raise ValueError('Unknown method used, try one of the following methods: [w_activities, all_activities, both]')
 
-if __name__ == '__main__':
-    old_frame = pd.read_csv('Datasets/BPI_Challenge_2012.csv', index_col = 'Unnamed: 0')
-    old_frame.drop(old_frame.index[-1], inplace=True)
-    old_frame.rename_axis(None, axis=0, inplace=True)
-    old_frame['case:REG_DATE'] = pd.to_datetime(old_frame['case:REG_DATE'])
-    old_frame['time:timestamp'] = pd.to_datetime(old_frame['time:timestamp'])
-    vacs = time_based_columns(old_frame, 'time:timestamp', 9, 17)
-    liq = add_liquidity(vacs, 'time:timestamp')
-    final = resource_active_cases(liq, activity_method='both')
-    print(final)
-    final.to_csv('Datasets/BPI_Challenge_2012-global_vars.csv')
+
