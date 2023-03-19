@@ -33,13 +33,23 @@ def normalizer(data):
     scaler.fit(data)
     return scaler
 
-def preprocess_event_X(train_data, test_data, enc):
+def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
+    train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
+    X_train = np.zeros((len(sentences), maxlen, num_features), dtype=np.float32)
+
+    for case_id, group in train_grouped:
+        event_sequence = []
+        for row in group:
+            current_event = []
+            current_event.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
+            current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
+
+            # event_sequence.append()
+            # X_train[] = event_sequence...
     vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    vector_event_lag_train = enc.transform(train_data[['first_lag_event']]).toarray()
-    vector_event_second_lag_train = enc.transform(train_data[['second_lag_event']]).toarray()
 
-    
+
     # number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
 
     number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, constants.AMOUNT_REQUESTED_COLUMN, constants.ACTIVE_CASES]]
@@ -112,12 +122,12 @@ def preprocess_event():
     test_data.dropna(inplace=True)
 
     enc = get_one_hot_encoder(full_data[[constants.CASE_POSITION_COLUMN]])
-    enc_next = get_one_hot_encoder(full_data[['next event']])
+    enc_next = get_one_hot_encoder(full_data[['next event']].append('END'))
     # label_encoder = get_label_encoder(full_data['next event'])
+    max_case_len = full_data.max(axis=constants.CASE_POSITION_COLUMN)
 
-
-    X_train, X_test = preprocess_event_X(train_data, test_data, enc)
-    y_train, y_test = preprocess_event_y(train_data, test_data, enc_next)
+    X_train, X_test = preprocess_event_X(train_data, test_data, enc, max_case_len)
+    y_train, y_test = preprocess_event_y(train_data, test_data, enc_next, max_case_len)
 
     return X_train, y_train, X_test, y_test, enc_next
 
@@ -125,13 +135,13 @@ def train_event(X_train, y_train):
     model = Sequential()
     model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
     model.add(keras.layers.Dropout(0.2))
-    
+
     model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
     model.add(keras.layers.Dropout(0.2))
-    
+
     model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
     model.add(keras.layers.Dropout(0.2))
-    
+
     model.add(keras.layers.LSTM(units = 50, activation="softmax"))
     model.add(keras.layers.Dropout(0.2))
 
