@@ -62,7 +62,7 @@ def tune_rf_activity(train_data, columns):
     preds = rf_random.best_estimator_.predict(X)
     
     
-    train_data['predicted next event'] = preds
+    train_data[constants.EVENT_PREDICTION] = preds
 
     print(rf_random.best_estimator_)
     print(accuracy_score(preds,y))
@@ -80,10 +80,10 @@ def train_activity_model(train_data, clf, columns, normal=True):
     clf.fit(X,y)
     preds = clf.predict(X)
     
-    train_data['predicted next event'] = preds
+    train_data[constants.EVENT_PREDICTION] = preds
     
 
-    classification_performance(train_data, "whatever.png")
+    classification_performance(train_data, "Confusion_Matrices/conf_matrix_random_forest_train.png")
     
     print(accuracy_score(preds,y))
     return clf
@@ -96,7 +96,7 @@ def train_time_model(train_data, clf, columns):
     clf.fit(X,y)
     preds = clf.predict(X)
 
-    train_data["predicted time until next event"] = preds
+    train_data[constants.TIME_PREDICTION] = preds
 
     regression_performance(train_data)
 
@@ -113,9 +113,9 @@ def test_activity_model(test_data, clf, columns, normal=True):
     
     preds = clf.predict(X)
 
-    test_data['predicted next event'] = preds
+    test_data[constants.EVENT_PREDICTION] = preds
     
-    classification_performance(test_data, "whatever.png")
+    classification_performance(test_data, "Confusion_Matrices/conf_matrix_random_forest_test.png")
 
     acc = accuracy_score(preds, y)
     print(acc)
@@ -127,7 +127,7 @@ def test_time_model(test_data, clf, columns):
     y = test_data['time until next event']
     preds = clf.predict(X)
 
-    test_data["predicted time until next event"] = preds
+    test_data[constants.TIME_PREDICTION] = preds
 
     regression_performance(test_data)
     
@@ -147,14 +147,14 @@ def compare_all_models(train_data, test_data, timer):
     print(train_data.columns)
     
     # copy so we don't modify the original training set
-    train_data = copy.deepcopy(train_data).rename(columns={'concept:name': 'name'})
+    train_data = copy.deepcopy(train_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
     train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
     train_data['next_activity_id'] = pd.factorize(train_data['next event'])[0]
     
 
     # copy test dataset
-    test_data = copy.deepcopy(test_data).rename(columns={'concept:name': 'name'})
+    test_data = copy.deepcopy(test_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(test_data['name'])
     test_data = test_data.drop('name', axis=1).join(names_ohe).dropna()
     test_data['next_activity_id'] = pd.factorize(test_data['next event'])[0]
@@ -208,69 +208,3 @@ def compare_all_models(train_data, test_data, timer):
     test_time_model(test_data, rand_forest_regr, cols)
 
     timer.send("Time to evaluate random forest regression (in seconds): ")
-
-    #print("XGBoost:")
-    #print("-----------------------------")
-    #print("Next activity:")
-    #clf = XGBClassifier()
-    #test_activity_model(test_data, train_activity_model(train_data, clf, cols, False), cols, False)
-    #print("Time to next activity:")
-    #reg = XGBRegressor()
-    #test_time_model(test_data, train_time_model(train_data, reg, cols), cols)
-
-
-    # print("Random Forest Hyperparameter Tuning:")
-    # print("-----------------------------")
-    # print("Next activity:")
-    # test_activity_model(test_data, tune_rf_activity(train_data, cols), cols)
-
-
-    # print("Permutation importance (Decision Tree):")
-    # importance(dec_tree_clas, *train_data)
-    
-
-def time_execution():
-    """A couroutine that prints a message it recieves through .send()
-    and the the seconds passed since the last time it was called.
-    """
-    start_time = time.process_time()
-    while True:
-        string = (yield)
-        new_time = time.process_time()
-        print(string, new_time - start_time)
-        start_time = new_time
-
-def correct_data(data):
-    # time_since_week_start
-    # time_to_work_hours
-
-    #li = data["time_since_week_start"]
-    #x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
-    #data["week_start"] = x
-    
-    #li = data["time_to_work_hours"]
-    #x = [int(el.split(" ")[0])*86400 + sum(np.array([3600, 60, 1]) * np.array([int(i) for i in el.split(" ")[2].split(".")[0].split(":")])) for el in li]
-    #data["work_hours"] = x
-    return data
-
-
-def main():
-    # set up the timer
-    timer = time_execution()
-    timer.__next__()
-
-    # do this if the files are not split already
-    # splitter.convert_raw_dataset(constants.RAW_DATASET_PATH, constants.CONVERTED_DATASET_PATH)
-    # timer.send("Time to convert dataset (in seconds): ")
-
-    full_data = pd.read_csv(constants.GLOBAL_DATASET_PATH)
-    full_data = correct_data(full_data)
-    splitter.time_series_split(full_data, 5)
-    data = splitter.split_dataset(full_data, 0.2)
-    
-    timer.send("Time to split dataset (in seconds): ")
-
-    compare_all_models(*data, timer)
-
-if __name__ == "__main__":
-    main()

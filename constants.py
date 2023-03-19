@@ -5,8 +5,9 @@ RAW_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
 CONVERTED_DATASET_PATH = './Datasets/BPI_Challenge_2012.csv'
 """The path to the dataset with additional columns, in .csv"""
 GLOBAL_DATASET_PATH = './Datasets/dataset_holiday_weekday.csv'
-
+"""The path to the dataset with added predictors, in .csv"""
 PIPELINED_DATASET_PATH = './Datasets/BPI_Challenge_2012_pipeline.csv'
+
 
 """The identifier of dataset column holding the case ID."""
 CASE_ID_COLUMN = 'case:concept:name'
@@ -27,5 +28,10 @@ CASE_END_COUNT = 'case end count'
 """The identifier of dataset column counting the number of cases that are open
 after the current event happens."""
 ACTIVE_CASES = 'active cases'
-
+"""The identifier of dataset column holding the amount requested in the case."""
 AMOUNT_REQUESTED_COLUMN = 'case:AMOUNT_REQ'
+
+"""The identifier of dataset column holding the next event prediction."""
+EVENT_PREDICTION = 'predicted next event'
+"""The identifier of dataset column holding the time until next event prediction."""
+TIME_PREDICTION = 'predicted time until next event'

@@ -17,7 +17,6 @@ def classification_performance(data, conf_matrix_name):
     :type conf_matrix_name: string
     :return: None
     """
-    
     print("Accuracy score (next event): ", accuracy_score(
         data['next event'], data['predicted next event']))
     print("Number of misclassifications: ", accuracy_score(
@@ -26,12 +25,13 @@ def classification_performance(data, conf_matrix_name):
     
     # create confusion matrix
     cf_matrix = cm(data['next event'], data['predicted next event'])
-    
+
     # normalize the confusion matrix
     cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
-    cf_df = pd.DataFrame(cf_matrix, index = list(data['next event'].unique()),
-                         columns = list(data['next event'].unique()))
-    
+    indices = list(set(data['next event'].unique()) | set(data['predicted next event'].unique()))
+    cf_df = pd.DataFrame(cf_matrix, index = indices,
+                         columns = indices)
+
     # plot the confusion matrix, add xticklabels=cf_df.columns, yticklabels=cf_df.index
     # as arguments to see the event names on the axes
     ax = sns.heatmap(cf_df, annot=False, fmt='g', xticklabels=False, yticklabels=False, annot_kws={"fontsize":10})
@@ -78,5 +78,5 @@ def time_execution():
     while True:
         string = (yield)
         new_time = time.process_time()
-        print(string, new_time - start_time)
+        print('\n' + string, new_time - start_time)
         start_time = new_time

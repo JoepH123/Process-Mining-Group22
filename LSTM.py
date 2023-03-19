@@ -253,7 +253,7 @@ def test(X_test, y_test, model, enc):
 
     y_test = pd.DataFrame(y_test,columns=['next event']).join(pd.DataFrame(predictions, columns=['predicted next event']))
 
-    classification_performance(y_test, "LSTM.png")
+    classification_performance(y_test, "Confusion_Matrices/LSTM.png")
 
 def load_model(file):
     model = keras.models.load_model(file)

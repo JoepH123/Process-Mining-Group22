@@ -48,7 +48,7 @@ def train_baseline_model(train_data_in, timer):
     next_event_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
         'next event'].agg(lambda x: clean_mode(pd.Series.mode(x))))
     next_event_df.rename(
-        columns={'next event': 'predicted next event'}, inplace=True)
+        columns={'next event': constants.EVENT_PREDICTION}, inplace=True)
     train_data = train_data.merge(
         next_event_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
 
@@ -58,11 +58,9 @@ def train_baseline_model(train_data_in, timer):
     time_elapsed_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
         'time until next event'].agg('mean'))
     time_elapsed_df.rename(
-        columns={'time until next event': 'predicted time until next event'}, inplace=True)
+        columns={'time until next event': constants.TIME_PREDICTION}, inplace=True)
     train_data = train_data.merge(
         time_elapsed_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
-
-    timer.send("Time to train baseline model time (in seconds): ")
 
     # this datafarame stores all the rows where time until next event and next event are null
     # we should decide what to do with it, for now i remove missing values
@@ -72,9 +70,10 @@ def train_baseline_model(train_data_in, timer):
     # calculate performance for train set
     print("-------------------------------------------------------------------")
     print('Train set:')
-    classification_performance(train_data, 'conf_matrix_train.png')
+    classification_performance(train_data, 'Confusion_Matrices/conf_matrix_baseline_train.png')
     regression_performance(train_data)
     print("-------------------------------------------------------------------")
+    timer.send("Time to train baseline model time (in seconds): ")
     return next_event_df, time_elapsed_df
 
 
@@ -85,6 +84,7 @@ def evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, te
         baseline_next_event_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
     test_data = test_data.merge(
         baseline_time_elapsed_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
+    
     # also remove missing values:
     test_data.dropna(inplace=True)
 
@@ -93,7 +93,7 @@ def evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, te
     print('Test set:')
     timer.send("Time to prepare for evaluation baseline model (in seconds): ")
 
-    classification_performance(test_data, 'conf_matrix_test.png')
+    classification_performance(test_data, 'Confusion_Matrices/conf_matrix_baseline_test.png')
     timer.send("Time to evaluate baseline model classification (in seconds): ")
     regression_performance(test_data)
     timer.send("Time to evaluate baseline model (in seconds): ")

@@ -91,7 +91,7 @@ def add_liquidity(df, date_column):
     df['month'] = df[date_column].dt.month
     df['day'] = df[date_column].dt.day
     
-    df['total_amount'] = df.groupby(['year', 'month', 'day'], as_index=False).agg(total_amount=('case:AMOUNT_REQ', 'sum'))['total_amount']
+    df['total_amount'] = df.groupby(['year', 'month', 'day'], as_index=False).agg(total_amount=(constants.AMOUNT_REQUESTED_COLUMN, 'sum'))['total_amount']
     
     return df
 
@@ -248,4 +248,13 @@ def resource_active_cases(dataframe, time_col='time:timestamp', event_col='conce
     else:
         raise ValueError('Unknown method used, try one of the following methods: [w_activities, all_activities, both]')
 
+def pipeline(data, timer):
+    """
+    This pipeline combines all the functions defined above. It makes sure that all steps are executed, and it returns
+    the total time that the pipeline took to execute. 
+    """
+    resource_active_cases(data)
+    time_based_columns(data, "time:timestamp")
 
+    timer.send("Time to add global variables (in seconds): ")
+    return data
