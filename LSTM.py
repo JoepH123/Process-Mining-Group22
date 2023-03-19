@@ -121,29 +121,81 @@ def preprocess_event():
 
     return X_train, y_train, X_test, y_test, enc_next
 
-def train_event(X_train, y_train):
-    model = Sequential()
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
-    model.add(keras.layers.Dropout(0.2))
+def train_event(X_train, y_train_clf, y_train_reg, epochs):
+    """
+    param X_train: array of shape (total # of events, 
+                                   maximum # of events in largest case, 
+                                   # of features), 
+                   containing only the training data. The number of features 
+                   is the total number of distinct events plus the number of 
+                   other columns we use as predictors. 
+    type X_train: 3D numpy array
+        
+    param y_train_clf: array of shape (total # of events, 
+                                       total # of distinct events),
+                      containing the one-hot-encoded vectors of events
+    type y_train_clf: 2D numpy array
     
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
+    param y_train_reg: array of shape (total # of activities), 
+                    containing the time until next event column of training data
+    type y_train_reg: 1D numpy array 
+    """
     
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
     
-    model.add(keras.layers.LSTM(units = 50, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
+    # maximum sequence of events length
+    max_sequence_len = np.shape(X_train)[1]
+    
+    # number of features from X_train shape (as above)
+    num_of_features = np.shape(X_train)[2]
+    
+    # number of all possible event names (including an end-of-sequence delimiter)
+    num_of_event_types = np.shape(y_train_clf)[1]
+    
+    main_input = keras.layers.Input(shape=(max_sequence_len, num_of_features), name='main_input')
+    # train a 2-layer LSTM with one shared layer
+    l1 = keras.layers.LSTM(100, implementation=2, return_sequences=True, dropout=0.2)(main_input) # the shared layer
+    b1 = keras.layers.BatchNormalization()(l1)
+    l2_1 = keras.layers.LSTM(100, implementation=2, return_sequences=False, dropout=0.2)(b1) # the layer specialized in activity prediction
+    b2_1 = keras.layers.BatchNormalization()(l2_1)
+    l2_2 = keras.layers.LSTM(100, implementation=2, return_sequences=False, dropout=0.2)(b1) # the layer specialized in time prediction
+    b2_2 = keras.layers.BatchNormalization()(l2_2)
+    event_output = keras.layers.Dense(num_of_event_types, activation='softmax', kernel_initializer='glorot_uniform', name='event_output')(b2_1)
+    time_output = keras.layers.Dense(1, kernel_initializer='glorot_uniform', name='time_output')(b2_2)
+    
+    model = keras.Model(inputs=[main_input], outputs=[event_output, time_output])
+    
+    # Nadam - Much like Adam is essentially RMSprop with momentum, Nadam is Adam with Nesterov momentum
+    opt = keras.optimizers.Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004, clipvalue=3)
+    
+    model.compile(loss={'event_output':'categorical_crossentropy', 'time_output':'mae'}, optimizer=opt)
+    early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=42)
+    model_checkpoint = keras.callbacks.ModelCheckpoint('output_files/models/model_{epoch:02d}-{val_loss:.2f}.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto')
+    lr_reducer = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+    
+    history = model.fit(X_train, {'event_output':y_train_clf, 'time_output':y_train_reg}, validation_split=0.2, verbose=2, callbacks=[early_stopping, model_checkpoint, lr_reducer], batch_size=max_sequence_len, epochs=epochs)
+    ##################   OLD CODE   ##############################
+    # model = Sequential()
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
+    # model.add(keras.layers.Dropout(0.2))
+    
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
+    
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
+    
+    # model.add(keras.layers.LSTM(units = 50, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
 
-    model.add(keras.layers.Dense(units = y_train.shape[1]))
-    model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics=['accuracy'])
+    # model.add(keras.layers.Dense(units = y_train.shape[1]))
+    # model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics=['accuracy'])
 
-    # FOR LABEL ENCODER
-    # model.add(keras.layers.Dense(units = 1))
-    # model.compile(optimizer = 'adam', loss = 'mse', metrics =['accuracy'])
+    # # FOR LABEL ENCODER
+    # # model.add(keras.layers.Dense(units = 1))
+    # # model.compile(optimizer = 'adam', loss = 'mse', metrics =['accuracy'])
 
-    history = model.fit(X_train, y_train, epochs = 7, batch_size = 100)
-
+    # history = model.fit(X_train, y_train, epochs = 7, batch_size = 100)
+    ################################################################
     loss_values = history.history['loss']
     epochs = range(1, len(loss_values)+1)
 
@@ -153,6 +205,7 @@ def train_event(X_train, y_train):
     plt.legend()
 
     plt.show()
+    
     return model
 
 
@@ -172,7 +225,7 @@ def load_model(file):
     return model
 
 def train_model(X_train, y_train, file=None):
-    model = train_event(X_train, y_train)
+    model = train_event(X_train, y_train_clf, y_train_reg, epochs)
     if file:
         model.save(file)
     return model
