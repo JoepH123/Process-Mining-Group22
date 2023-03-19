@@ -33,13 +33,47 @@ def normalizer(data):
     scaler.fit(data)
     return scaler
 
-def preprocess_event_X(train_data, test_data, enc):
+def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
-    vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    vector_event_lag_train = enc.transform(train_data[['first_lag_event']]).toarray()
-    vector_event_second_lag_train = enc.transform(train_data[['second_lag_event']]).toarray()
+    num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
 
+    # number of features is the total number of distinct events plus the 
+    # number of other columns we use as predictors
+    num_of_features = len(train_data[constants.CASE_POSITION_COLUMN].unique()) + num_of_predictors
     
+    train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
+    X_train = np.zeros((len(train_data.index), max_case_len, num_of_features), dtype=np.float32)
+    
+    i = 0
+    for case_id, group in train_grouped:
+        event_sequence = []
+        time_sequence = []
+        amount_sequence = []
+        for index, row in group.iterrows():
+            current_event_encoded = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
+            event_sequence.append([event_sequence, current_event_encoded])
+            print(event_sequence)
+            i += 1
+            if i>2:
+                break
+        break
+        
+        # for row in group:
+        #     #event_sequence.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
+        #     print(row)
+        #     print(enc.transform(row[constants.CASE_POSITION_COLUMN]))
+        #     i +=1
+        #     if i>5:
+        #         break
+            time_sequence.append(row[constants.CASE_TIMESTAMP_COLUMN])
+            amount_sequence.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+            
+            
+            # event_sequence.append()
+            # X_train[] = event_sequence...
+    vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+
+
     # number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
 
     number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, constants.AMOUNT_REQUESTED_COLUMN, constants.ACTIVE_CASES]]
@@ -112,38 +146,91 @@ def preprocess_event():
     test_data.dropna(inplace=True)
 
     enc = get_one_hot_encoder(full_data[[constants.CASE_POSITION_COLUMN]])
-    enc_next = get_one_hot_encoder(full_data[['next event']])
+    enc_next = get_one_hot_encoder(full_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
     # label_encoder = get_label_encoder(full_data['next event'])
+    
+    max_case_len = int(full_data['activity number in case'].max())
 
-
-    X_train, X_test = preprocess_event_X(train_data, test_data, enc)
-    y_train, y_test = preprocess_event_y(train_data, test_data, enc_next)
+    X_train, X_test = preprocess_event_X(train_data, test_data, enc, max_case_len)
+    y_train, y_test = preprocess_event_y(train_data, test_data, enc_next, max_case_len)
 
     return X_train, y_train, X_test, y_test, enc_next
 
-def train_event(X_train, y_train):
-    model = Sequential()
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
-    model.add(keras.layers.Dropout(0.2))
-    
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
-    
-    model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
-    
-    model.add(keras.layers.LSTM(units = 50, activation="softmax"))
-    model.add(keras.layers.Dropout(0.2))
+def train_event(X_train, y_train_clf, y_train_reg, epochs):
+    """
+    param X_train: array of shape (total # of events,
+                                   maximum # of events in largest case,
+                                   # of features),
+                   containing only the training data. The number of features
+                   is the total number of distinct events plus the number of
+                   other columns we use as predictors.
+    type X_train: 3D numpy array
 
-    model.add(keras.layers.Dense(units = y_train.shape[1]))
-    model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics=['accuracy'])
+    param y_train_clf: array of shape (total # of events,
+                                       total # of distinct events),
+                      containing the one-hot-encoded vectors of events
+    type y_train_clf: 2D numpy array
 
-    # FOR LABEL ENCODER
-    # model.add(keras.layers.Dense(units = 1))
-    # model.compile(optimizer = 'adam', loss = 'mse', metrics =['accuracy'])
+    param y_train_reg: array of shape (total # of activities),
+                    containing the time until next event column of training data
+    type y_train_reg: 1D numpy array
+    """
 
-    history = model.fit(X_train, y_train, epochs = 7, batch_size = 100)
 
+    # maximum sequence of events length
+    max_sequence_len = np.shape(X_train)[1]
+
+    # number of features from X_train shape (as above)
+    num_of_features = np.shape(X_train)[2]
+
+    # number of all possible event names (including an end-of-sequence delimiter)
+    num_of_event_types = np.shape(y_train_clf)[1]
+
+    main_input = keras.layers.Input(shape=(max_sequence_len, num_of_features), name='main_input')
+    # train a 2-layer LSTM with one shared layer
+    l1 = keras.layers.LSTM(100, implementation=2, return_sequences=True, dropout=0.2)(main_input) # the shared layer
+    b1 = keras.layers.BatchNormalization()(l1)
+    l2_1 = keras.layers.LSTM(100, implementation=2, return_sequences=False, dropout=0.2)(b1) # the layer specialized in activity prediction
+    b2_1 = keras.layers.BatchNormalization()(l2_1)
+    l2_2 = keras.layers.LSTM(100, implementation=2, return_sequences=False, dropout=0.2)(b1) # the layer specialized in time prediction
+    b2_2 = keras.layers.BatchNormalization()(l2_2)
+    event_output = keras.layers.Dense(num_of_event_types, activation='softmax', kernel_initializer='glorot_uniform', name='event_output')(b2_1)
+    time_output = keras.layers.Dense(1, kernel_initializer='glorot_uniform', name='time_output')(b2_2)
+
+    model = keras.Model(inputs=[main_input], outputs=[event_output, time_output])
+
+    # Nadam - Much like Adam is essentially RMSprop with momentum, Nadam is Adam with Nesterov momentum
+    opt = keras.optimizers.Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004, clipvalue=3)
+
+    model.compile(loss={'event_output':'categorical_crossentropy', 'time_output':'mae'}, optimizer=opt)
+    early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=42)
+    model_checkpoint = keras.callbacks.ModelCheckpoint('output_files/models/model_{epoch:02d}-{val_loss:.2f}.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto')
+    lr_reducer = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+
+    history = model.fit(X_train, {'event_output':y_train_clf, 'time_output':y_train_reg}, validation_split=0.2, verbose=2, callbacks=[early_stopping, model_checkpoint, lr_reducer], batch_size=max_sequence_len, epochs=epochs)
+    ##################   OLD CODE   ##############################
+    # model = Sequential()
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
+    # model.add(keras.layers.Dropout(0.2))
+
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
+
+    # model.add(keras.layers.LSTM(units = 50, return_sequences = True, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
+
+    # model.add(keras.layers.LSTM(units = 50, activation="softmax"))
+    # model.add(keras.layers.Dropout(0.2))
+
+    # model.add(keras.layers.Dense(units = y_train.shape[1]))
+    # model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics=['accuracy'])
+
+    # # FOR LABEL ENCODER
+    # # model.add(keras.layers.Dense(units = 1))
+    # # model.compile(optimizer = 'adam', loss = 'mse', metrics =['accuracy'])
+
+    # history = model.fit(X_train, y_train, epochs = 7, batch_size = 100)
+    ################################################################
     loss_values = history.history['loss']
     epochs = range(1, len(loss_values)+1)
 
@@ -153,6 +240,7 @@ def train_event(X_train, y_train):
     plt.legend()
 
     plt.show()
+
     return model
 
 
@@ -162,7 +250,7 @@ def test(X_test, y_test, model, enc):
     # score = model.evaluate(X_test, y_test, verbose=0)
     predictions = enc.inverse_transform(predictions)
     y_test = enc.inverse_transform(y_test)
-    
+
     y_test = pd.DataFrame(y_test,columns=['next event']).join(pd.DataFrame(predictions, columns=['predicted next event']))
 
     classification_performance(y_test, "LSTM.png")
@@ -172,7 +260,7 @@ def load_model(file):
     return model
 
 def train_model(X_train, y_train, file=None):
-    model = train_event(X_train, y_train)
+    model = train_event(X_train, y_train_clf, y_train_reg, epochs)
     if file:
         model.save(file)
     return model
