@@ -35,16 +35,40 @@ def normalizer(data):
 
 def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
-    train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
-    X_train = np.zeros((len(sentences), maxlen, num_features), dtype=np.float32)
+    num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
 
+    # number of features is the total number of distinct events plus the 
+    # number of other columns we use as predictors
+    num_of_features = len(train_data[constants.CASE_POSITION_COLUMN].unique()) + num_of_predictors
+    
+    train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
+    X_train = np.zeros((len(train_data.index), max_case_len, num_of_features), dtype=np.float32)
+    
+    i = 0
     for case_id, group in train_grouped:
         event_sequence = []
-        for row in group:
-            current_event = []
-            current_event.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
-            current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
-
+        time_sequence = []
+        amount_sequence = []
+        for index, row in group.iterrows():
+            current_event_encoded = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
+            event_sequence.append([event_sequence, current_event_encoded])
+            print(event_sequence)
+            i += 1
+            if i>2:
+                break
+        break
+        
+        # for row in group:
+        #     #event_sequence.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
+        #     print(row)
+        #     print(enc.transform(row[constants.CASE_POSITION_COLUMN]))
+        #     i +=1
+        #     if i>5:
+        #         break
+            time_sequence.append(row[constants.CASE_TIMESTAMP_COLUMN])
+            amount_sequence.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+            
+            
             # event_sequence.append()
             # X_train[] = event_sequence...
     vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
@@ -122,9 +146,10 @@ def preprocess_event():
     test_data.dropna(inplace=True)
 
     enc = get_one_hot_encoder(full_data[[constants.CASE_POSITION_COLUMN]])
-    enc_next = get_one_hot_encoder(full_data[['next event']].append('END'))
+    enc_next = get_one_hot_encoder(full_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
     # label_encoder = get_label_encoder(full_data['next event'])
-    max_case_len = full_data.max(axis=constants.CASE_POSITION_COLUMN)
+    
+    max_case_len = int(full_data['activity number in case'].max())
 
     X_train, X_test = preprocess_event_X(train_data, test_data, enc, max_case_len)
     y_train, y_test = preprocess_event_y(train_data, test_data, enc_next, max_case_len)
