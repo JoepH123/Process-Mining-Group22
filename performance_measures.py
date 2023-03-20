@@ -18,26 +18,26 @@ def classification_performance(data, conf_matrix_name):
     :return: None
     """
     print("Accuracy score (next event): ", accuracy_score(
-        data['next event'], data['predicted next event']))
+        data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION]))
     print("Number of misclassifications: ", accuracy_score(
-        data['next event'], data['predicted next event'], normalize=False))
+        data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION], normalize=False))
     #print('Confusion matrix:')
     
     # create confusion matrix
-    cf_matrix = cm(data['next event'], data['predicted next event'])
+    cf_matrix = cm(data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION])
 
     # normalize the confusion matrix
     cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
-    indices = list(set(data['next event'].unique()) | set(data['predicted next event'].unique()))
+    indices = list(set(data[constants.NEXT_EVENT].unique()) | set(data[constants.NEXT_EVENT_PREDICTION].unique()))
     cf_df = pd.DataFrame(cf_matrix, index = indices,
                          columns = indices)
 
     # plot the confusion matrix, add xticklabels=cf_df.columns, yticklabels=cf_df.index
     # as arguments to see the event names on the axes
     ax = sns.heatmap(cf_df, annot=False, fmt='g', xticklabels=False, yticklabels=False, annot_kws={"fontsize":10})
-    ax.set_title('Confusion Matrix \n');
+    ax.set_title('Confusion Matrix \n')
     ax.set_xlabel('\nPredicted Values')
-    ax.set_ylabel('Actual Values ');
+    ax.set_ylabel('Actual Values ')
     
     # display the visualization of the confusion matrix, save it as png
     fig = ax.get_figure()
@@ -45,8 +45,8 @@ def classification_performance(data, conf_matrix_name):
     plt.show()
     plt.clf()
     
-    print("Classification report: ", classification_report(data['next event'], 
-       data['predicted next event'], zero_division=1))
+    print("Classification report: ", classification_report(data[constants.NEXT_EVENT], 
+       data[constants.NEXT_EVENT_PREDICTION], zero_division=1))
     
     # Experimental - use only if decided
     # print("Precision, recall, fscore, support with possible aggregation: ",
@@ -63,12 +63,12 @@ def regression_performance(data):
     """
     
     print("Mean absolute error (time until next event): ", mean_absolute_error(
-        data['time until next event'], data['predicted time until next event']))
-    print("Root mean squared error: ", mean_squared_error(data['time until next event'], 
-        data['predicted time until next event'], squared=False))
-    data_no_zero = data[data['time until next event'] != 0]
+        data[constants.TIME_DIFFERENCE], data[constants.TIME_DIFFERENCE_PREDICTION]))
+    print("Root mean squared error: ", mean_squared_error(data[constants.TIME_DIFFERENCE], 
+        data[constants.TIME_DIFFERENCE_PREDICTION], squared=False))
+    data_no_zero = data[data[constants.TIME_DIFFERENCE] != 0]
     print("Root mean squared percentage error: ", np.sqrt(np.mean(np.square((
-        (data_no_zero['time until next event'] - data_no_zero['predicted time until next event']) / data_no_zero['time until next event'])), axis=0)))
+        (data_no_zero[constants.TIME_DIFFERENCE] - data_no_zero[constants.TIME_DIFFERENCE_PREDICTION]) / data_no_zero[constants.TIME_DIFFERENCE])), axis=0)))
 
 def time_execution():
     """A couroutine that prints a message it recieves through .send()

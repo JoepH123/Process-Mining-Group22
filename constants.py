@@ -1,14 +1,12 @@
-# ----------------------CONSTANTS----------------------------------
+# ----------------------DATASETS----------------------------------
 """The path to the raw dataset, in .xes.gz"""
 RAW_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
 """The path to the converted dataset, in .csv"""
 CONVERTED_DATASET_PATH = './Datasets/BPI_Challenge_2012.csv'
-"""The path to the dataset with additional columns, in .csv"""
-GLOBAL_DATASET_PATH = './Datasets/dataset_holiday_weekday.csv'
 """The path to the dataset with added predictors, in .csv"""
 PIPELINED_DATASET_PATH = './Datasets/BPI_Challenge_2012_pipeline.csv'
 
-
+# ----------------------ATTRIBUTES----------------------------------
 """The identifier of dataset column holding the case ID."""
 CASE_ID_COLUMN = 'case:concept:name'
 """The identifier of dataset column holding the case position/state."""
@@ -31,7 +29,12 @@ ACTIVE_CASES = 'active cases'
 """The identifier of dataset column holding the amount requested in the case."""
 AMOUNT_REQUESTED_COLUMN = 'case:AMOUNT_REQ'
 
+# ----------------------OUTPUTS----------------------------------
+"""The identifier of dataset column holding the next event."""
+NEXT_EVENT = 'next event'
+"""The identifier of dataset column holding the time until next event."""
+TIME_DIFFERENCE = 'time until next event'
 """The identifier of dataset column holding the next event prediction."""
-EVENT_PREDICTION = 'predicted next event'
+NEXT_EVENT_PREDICTION = 'predicted next event'
 """The identifier of dataset column holding the time until next event prediction."""
-TIME_PREDICTION = 'predicted time until next event'
+TIME_DIFFERENCE_PREDICTION = 'predicted time until next event'

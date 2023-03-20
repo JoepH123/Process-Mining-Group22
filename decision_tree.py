@@ -5,7 +5,6 @@ from sklearn.metrics import accuracy_score, mean_absolute_error
 import splitter, constants
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from xgboost import XGBClassifier, XGBRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
@@ -24,7 +23,7 @@ def importance(model, X_val, y_val):
 
 def tune_rf_activity(train_data, columns):
     X = train_data[columns]
-    y = train_data['next event']
+    y = train_data[constants.NEXT_EVENT]
 
     
     ######## Parameters #######
@@ -62,7 +61,7 @@ def tune_rf_activity(train_data, columns):
     preds = rf_random.best_estimator_.predict(X)
     
     
-    train_data[constants.EVENT_PREDICTION] = preds
+    train_data[constants.NEXT_EVENT_PREDICTION] = preds
 
     print(rf_random.best_estimator_)
     print(accuracy_score(preds,y))
@@ -75,12 +74,12 @@ def train_activity_model(train_data, clf, columns, normal=True):
     if not normal:
         y = train_data['next_activity_id']
     else:
-        y = train_data['next event']
+        y = train_data[constants.NEXT_EVENT]
 
     clf.fit(X,y)
     preds = clf.predict(X)
     
-    train_data[constants.EVENT_PREDICTION] = preds
+    train_data[constants.NEXT_EVENT_PREDICTION] = preds
     
 
     classification_performance(train_data, "Confusion_Matrices/conf_matrix_random_forest_train.png")
@@ -91,12 +90,12 @@ def train_activity_model(train_data, clf, columns, normal=True):
 def train_time_model(train_data, clf, columns):
     X = train_data[columns]
 
-    y = train_data['time until next event']
+    y = train_data[constants.TIME_DIFFERENCE]
 
     clf.fit(X,y)
     preds = clf.predict(X)
 
-    train_data[constants.TIME_PREDICTION] = preds
+    train_data[constants.TIME_DIFFERENCE_PREDICTION] = preds
 
     regression_performance(train_data)
 
@@ -109,11 +108,11 @@ def test_activity_model(test_data, clf, columns, normal=True):
     if not normal:
         y = test_data['next_activity_id']
     else:
-        y = test_data['next event']
+        y = test_data[constants.NEXT_EVENT]
     
     preds = clf.predict(X)
 
-    test_data[constants.EVENT_PREDICTION] = preds
+    test_data[constants.NEXT_EVENT_PREDICTION] = preds
     
     classification_performance(test_data, "Confusion_Matrices/conf_matrix_random_forest_test.png")
 
@@ -124,10 +123,10 @@ def test_activity_model(test_data, clf, columns, normal=True):
 def test_time_model(test_data, clf, columns):
     X = test_data[columns]
 
-    y = test_data['time until next event']
+    y = test_data[constants.TIME_DIFFERENCE]
     preds = clf.predict(X)
 
-    test_data[constants.TIME_PREDICTION] = preds
+    test_data[constants.TIME_DIFFERENCE_PREDICTION] = preds
 
     regression_performance(test_data)
     
@@ -150,14 +149,14 @@ def compare_all_models(train_data, test_data, timer):
     train_data = copy.deepcopy(train_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
     train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
-    train_data['next_activity_id'] = pd.factorize(train_data['next event'])[0]
+    train_data['next_activity_id'] = pd.factorize(train_data[constants.NEXT_EVENT])[0]
     
 
     # copy test dataset
     test_data = copy.deepcopy(test_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(test_data['name'])
     test_data = test_data.drop('name', axis=1).join(names_ohe).dropna()
-    test_data['next_activity_id'] = pd.factorize(test_data['next event'])[0]
+    test_data['next_activity_id'] = pd.factorize(test_data[constants.NEXT_EVENT])[0]
 
     timer.send("Time to prepare columns (in seconds): ")
     

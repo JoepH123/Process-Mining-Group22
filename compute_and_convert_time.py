@@ -1,6 +1,6 @@
 """
 This module contains function that compute the average duration of a case in the input dataset. This is information that we include on the poster
-so therefore I this contains the code to compute it. Furthermore it contains two functions which can be used to convert seconds to a suitable time 
+so therefore this contains the code to compute it. Furthermore it contains two functions which can be used to convert seconds to a suitable time 
 unit. There are two different approaches. 
 
 You can choose either approach, note that both the functions of both approaches use the display_time(seconds) function as a dependency.
@@ -69,11 +69,6 @@ def compute_avg_case_duration(data_with_time_column):
         total_duration += case_duration
     avg_duration = total_duration / nr_cases
     return int(round(avg_duration, 0))
-
-
-data = load_data_and_compute_case_relative_time(constants.GLOBAL_DATASET_PATH)
-avg_time = compute_avg_case_duration(data)
-print(avg_time)
 
 # Time display functions
 
@@ -175,7 +170,11 @@ def max_four_digit_time_rep_naive(seconds):
         return f"{first_unit[0]} {names[first_unit[1]]}, {second_unit[0]} {names[second_unit[1]]}"
 
 
-exact_rounded_time = max_four_digit_time_rep_accurate(avg_time)
-naive_rounded_time = max_four_digit_time_rep_naive(avg_time)
-print(exact_rounded_time)
-print(naive_rounded_time)
+# data = load_data_and_compute_case_relative_time(constants.GLOBAL_DATASET_PATH)
+# avg_time = compute_avg_case_duration(data)
+# print(avg_time)
+
+# exact_rounded_time = max_four_digit_time_rep_accurate(avg_time)
+# naive_rounded_time = max_four_digit_time_rep_naive(avg_time)
+# print(exact_rounded_time)
+# print(naive_rounded_time)

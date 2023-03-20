@@ -1,12 +1,11 @@
 import pandas as pd
 import datetime
-import workalendar
 import country_converter as cc
 import numpy as np
 from typing import Union
 import warnings
 from tqdm import tqdm
-
+import constants
 
 def obtain_holidays(country: str, years: Union[list, np.ndarray]):
     """
@@ -96,10 +95,10 @@ def add_liquidity(df, date_column):
     return df
 
 
-def resource_active_cases(dataframe, time_col='time:timestamp', event_col='concept:name',
+def resource_active_cases(dataframe, time_col=constants.CASE_TIMESTAMP_COLUMN, event_col=constants.CASE_POSITION_COLUMN,
                           status_col='lifecycle:transition', resource_col='org:resource',
-                          time_between_events_col='time until next event', case_id_col='case:concept:name',
-                          act_nr_col='activity number in case', next_event_col='next event',
+                          time_between_events_col=constants.TIME_DIFFERENCE, case_id_col=constants.CASE_ID_COLUMN,
+                          act_nr_col=constants.CASE_STEP_NUMBER_COLUMN, next_event_col=constants.NEXT_EVENT,
                           activity_method='w_activities', start_variable='START'):
     '''
     Function to obtain all the active cases for a resource at the time of starting a new event.

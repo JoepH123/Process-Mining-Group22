@@ -1,37 +1,7 @@
 # Imports 
 import pandas as pd
 import time
-from datetime import datetime, timedelta
 import constants
-import datetime
-import workalendar
-import country_converter as cc
-import numpy as np
-from typing import Union
-
-datapath = '../Data/Prepare&Load Data/'
-
-def load_data(datapath):
-    """
-    Load data from some datapath, and sort the data based on the event timestamp
-    """ 
-    start = time.time() ###
-    print("Load in the CSV file data") ###
-    print("-------------------------") ###
-    
-    data = pd.read_csv(datapath+'BPI_Challenge_2012/BPI_Challenge_2012-training.csv', parse_dates=['case REG_DATE', constants.CASE_TIMESTAMP_COLUMN])
-    
-    print("Sort values based on event timestamp") ###
-    
-    data = data.sort_values(by=["event time:timestamp"])
-    data.reset_index(inplace=True, drop=True)
-    
-    end = time.time() ###
-    print(f"Function time taken: {end-start}") ###
-    print("------------------------------------") ###
-    
-    return data
-
 
 def compute_case_relative_time(data):
     """

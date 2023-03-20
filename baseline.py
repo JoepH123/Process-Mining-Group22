@@ -46,9 +46,9 @@ def train_baseline_model(train_data_in, timer):
 
     # get the most frequent event for each case position
     next_event_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
-        'next event'].agg(lambda x: clean_mode(pd.Series.mode(x))))
+        constants.NEXT_EVENT].agg(lambda x: clean_mode(pd.Series.mode(x))))
     next_event_df.rename(
-        columns={'next event': constants.EVENT_PREDICTION}, inplace=True)
+        columns={constants.NEXT_EVENT: constants.NEXT_EVENT_PREDICTION}, inplace=True)
     train_data = train_data.merge(
         next_event_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
 
@@ -56,15 +56,15 @@ def train_baseline_model(train_data_in, timer):
 
     # get the average of the time elapsed between the events at case positions i and i+1
     time_elapsed_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
-        'time until next event'].agg('mean'))
+        constants.TIME_DIFFERENCE].agg('mean'))
     time_elapsed_df.rename(
-        columns={'time until next event': constants.TIME_PREDICTION}, inplace=True)
+        columns={constants.TIME_DIFFERENCE: constants.TIME_DIFFERENCE_PREDICTION}, inplace=True)
     train_data = train_data.merge(
         time_elapsed_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
 
     # this datafarame stores all the rows where time until next event and next event are null
     # we should decide what to do with it, for now i remove missing values
-    exp_df = train_data[train_data['time until next event'].isnull()]
+    exp_df = train_data[train_data[constants.TIME_DIFFERENCE].isnull()]
     train_data.dropna(inplace=True)
 
     # calculate performance for train set
