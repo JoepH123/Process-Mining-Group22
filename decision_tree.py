@@ -134,23 +134,23 @@ def test_time_model(test_data, clf, columns):
 
 def compare_all_models(train_data, test_data, timer):
     cols = ['activity number in case', 'case end count',
-            'A_ACCEPTED', 'A_ACTIVATED', 'A_APPROVED',
-       'A_CANCELLED', 'A_DECLINED', 'A_FINALIZED', 'A_PARTLYSUBMITTED',
-       'A_PREACCEPTED', 'A_REGISTERED', 'A_SUBMITTED', 'O_ACCEPTED',
-       'O_CANCELLED', 'O_CREATED', 'O_DECLINED', 'O_SELECTED', 'O_SENT',
-       'O_SENT_BACK', 'W_Afhandelen leads', 'W_Beoordelen fraude',
-       'W_Completeren aanvraag', 'W_Nabellen incomplete dossiers',
-       'W_Nabellen offertes', 'W_Valideren aanvraag', 'days_until_next_holiday',
-       'is_weekend', 'seconds_since_week_start', 'is_work_time', 'seconds_to_work_hours', 'is_holiday']
+            'days_until_next_holiday', 'is_weekend', 
+            'seconds_since_week_start', 'is_work_time', 
+            'seconds_to_work_hours', 'is_holiday']
 
     print(train_data.columns)
     
     # copy so we don't modify the original training set
     train_data = copy.deepcopy(train_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
+    
+    cols.extend(names_ohe)
+    print(cols)
+
     train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
     train_data['next_activity_id'] = pd.factorize(train_data[constants.NEXT_EVENT])[0]
     
+    print(train_data)
 
     # copy test dataset
     test_data = copy.deepcopy(test_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})

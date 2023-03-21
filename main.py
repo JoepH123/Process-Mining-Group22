@@ -10,14 +10,14 @@ import global_vars
 import splitter, constants, baseline
 from performance_measures import time_execution
 import decision_tree
+import argparse
 
-
-def prepare_data(timer):
+def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # do this if the files are not split already
     # splitter.convert_raw_dataset(constants.RAW_DATASET_PATH, constants.CONVERTED_DATASET_PATH)
     # timer.send("Time to convert dataset (in seconds): ")
 
-    full_data = pd.read_csv(constants.CONVERTED_DATASET_PATH)
+    full_data = pd.read_csv(unprocessed_dataset)
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
 
@@ -26,7 +26,7 @@ def prepare_data(timer):
     data = global_vars.pipeline(data, timer)
 
     # Save the data to a file so we don't have to do this again
-    data.to_csv(constants.PIPELINED_DATASET_PATH)
+    data.to_csv(pipeline_dataset)
 
     train_data, test_data = splitter.split_dataset(data, 0.2)
     splitter.time_series_split(train_data, 5)
@@ -35,22 +35,40 @@ def prepare_data(timer):
 
     return train_data, test_data
 
-def read_data():
-    data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+def read_data(pipeline_dataset):
+    data = pd.read_csv(pipeline_dataset)
     
     train_data, test_data = splitter.split_dataset(data, 0.2)
     return train_data, test_data
 
-def main():
+def main(args):
+    # Parsed arguments
+    dataset = args.dataset
+    generate = args.generate
+    
     # set up the timer
     timer = time_execution()
     timer.__next__()
 
-    # Includes calculation of predictors
-    train_data, test_data = prepare_data(timer)
 
-    # Read the data from the file
-    # train_data, test_data = read_data()
+    # Condition in the dataset version
+    if(dataset==2017):
+        # 2017 Dataset
+        unprocessed_dataset = constants.CONVERTED_2017_DATASET_PATH
+        pipeline_dataset = constants.PIPELINED_2017_DATASET_PATH
+    else:
+        # 2012 Dataset
+        unprocessed_dataset = constants.CONVERTED_DATASET_PATH
+        pipeline_dataset = constants.PIPELINED_DATASET_PATH
+        
+
+    # Condition on whether to re-run the data preprocessing
+    if(generate):
+        # Includes calculation of predictors
+        train_data, test_data = prepare_data(unprocessed_dataset,pipeline_dataset, timer)
+    else:
+        # Read the data from the file
+        train_data, test_data = read_data(pipeline_dataset)
     
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
@@ -62,4 +80,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dataset", help="year of dataset", default=2012, type=int
+    )
+    parser.add_argument(
+        "--generate", help="0 if the data should be generated, 1 if it should be read from file", default=0, type=int
+    )
+
+    args = parser.parse_args()
+    main(args)

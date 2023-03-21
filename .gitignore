@@ -1,6 +1,10 @@
+# New
+Datasets/BPI_Challenge_2017.csv
+Confusion_Matrices/*
+
 # vscode
 .vscode/
-Datasets/BPI_Challenge_2017.csv
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

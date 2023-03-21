@@ -1,3 +1,4 @@
 from splitter import *
+import constants
 
-convert_raw_dataset("Datasets/BPI_Challenge_2017.xes.gz", "Datasets/BPI_Challenge_2017.csv")
+convert_raw_dataset(constants.RAW_2017_DATASET_PATH, constants.CONVERTED_2017_DATASET_PATH)
