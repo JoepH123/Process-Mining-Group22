@@ -1,5 +1,6 @@
 # vscode
 .vscode/
+Datasets/BPI_Challenge_2017.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

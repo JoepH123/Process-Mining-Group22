@@ -58,7 +58,7 @@ def main():
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
 
     # DECISION TREE AND RANDOM FOREST
-    decision_tree.compare_all_models(train_data, test_data, timer)
+    # decision_tree.compare_all_models(train_data, test_data, timer)
 
 
 if __name__ == "__main__":

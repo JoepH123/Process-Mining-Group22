@@ -59,6 +59,10 @@ def convert_raw_dataset(raw_path, converted_path):
 
     print("shape of converted dataset: ", dataframe.shape)
 
+    # Change column names if dataset is from 2017
+    if "case:AMOUNT_REQ" not in dataframe.columns and "case:RequestedAmount" in dataframe.columns:
+        dataframe.rename(columns={"case:RequestedAmount": "case:AMOUNT_REQ"}, inplace=True)
+
     dataframe.to_csv(converted_path)
 
 def split_dataset(dataframe: pd.DataFrame, split_ratio: float):
@@ -154,4 +158,4 @@ def time_series_split(dataframe: pd.DataFrame, k: int):
 
 
 if __name__ == "__main__":
-    split_dataset(0.2)
+    split_dataset(pd.read_csv("Datasets/BPI_Challenge_2017.csv"), 0.2)
