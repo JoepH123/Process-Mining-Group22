@@ -1,10 +1,10 @@
 import math
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
 import keras.layers
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import splitter
@@ -15,11 +15,6 @@ from baseline import classification_performance, regression_performance
 
 plt.style.use('fivethirtyeight')
 
-# Encodes string data as integers
-def get_label_encoder(data):
-    le = LabelEncoder()
-    le.fit(data)
-    return le
 
 # Encodes string data as one-hot vectors
 def get_one_hot_encoder(data):
@@ -28,113 +23,54 @@ def get_one_hot_encoder(data):
     return enc
 
 # Normalizes numerical data
-def normalizer(data):
-    scaler = Normalizer()
-    scaler.fit(data)
-    return scaler
+def normalize(train_data, test_data):
+    scaler = StandardScaler()
+    train_data_reshape = train_data.to_numpy().reshape(1, -1)
+    print(train_data_reshape)
+    test_data_reshape = test_data.to_numpy().reshape(1, -1)
+    scaler.fit(train_data_reshape)
+    return scaler.transform(train_data_reshape)[0], scaler.transform(test_data_reshape)[0]
 
-def preprocess_event_X(train_data, test_data, enc, max_case_len):
+def normalize(train_data, test_data):
+    train_mean = train_data.mean()
+    train_std = train_data.std()
+    return ((train_data - train_mean) / train_std), ((test_data - train_mean) / train_std)
 
+def preprocess_event_X(data, enc, max_case_len):
     num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
-
+    
     # number of features is the total number of distinct events plus the
     # number of other columns we use as predictors
-    num_of_features = len(train_data[constants.CASE_POSITION_COLUMN].unique()) + num_of_predictors
+    num_of_features = len(enc.get_feature_names()) + num_of_predictors
+    grouped = data.groupby([constants.CASE_ID_COLUMN])
+    X = np.zeros((len(data.index), max_case_len, num_of_features), dtype=np.float32)
 
-    normalizer = normalizer(train_data[[constants.AMOUNT_REQUESTED_COLUMN]])
-    train_data[constants.AMOUNT_REQUESTED_COLUMN] = normalizer.transform(train_data[[constants.AMOUNT_REQUESTED_COLUMN]])
-
-    normalizer = normalizer(train_data[[constants.TIME_SINCE_PREVIOUS_EVENT]])
-    train_data[constants.TIME_SINCE_PREVIOUS_EVENT] = normalizer.transform(train_data[[constants.TIME_SINCE_PREVIOUS_EVENT]])
-
-    train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
-    X_train = np.zeros((len(train_data.index), max_case_len, num_of_features), dtype=np.float32)
-    i = 0
     row_counter = 0
-    for case_id, group in train_grouped:
+    for case_id, group in grouped:
         event_sequence = []
         for index, row in group.iterrows():
             current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
-            current_event.append(row[constants.TIME_SINCE_PREVIOUS_EVENT])
-            current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+            current_event.append(row['amount requested normalized'])
+            current_event.append(row['time since previous event'])
 
             event_sequence.append(current_event)
-            print(event_sequence)
-            event_index = num_of_features - num_of_predictors - 1
+            event_index = max_case_len - 1
             for event in reversed(event_sequence):
-                np.copyto(X_train[row_counter, event_index], np.array(event).astype('float32'))
+                np.copyto(X[row_counter, event_index], np.array(event).astype('float32'))
                 event_index -= 1
-
-            i += 1
             row_counter += 1
-            if i>2:
-                break
-        break
+        print("done case ", case_id)
+    return X
 
-        # for row in group:
-        #     #event_sequence.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
-        #     print(row)
-        #     print(enc.transform(row[constants.CASE_POSITION_COLUMN]))
-        #     i +=1
-        #     if i>5:
-        #         break
 
-            # event_sequence.append()
-            # X_train[] = event_sequence...
-
-    # number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
-
-    number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, constants.AMOUNT_REQUESTED_COLUMN, constants.ACTIVE_CASES]]
-    # case_step_number_normalizer = normalizer(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
-    amount_requested_normalizer = normalizer(number_data_train[[constants.AMOUNT_REQUESTED_COLUMN]])
-    # case_end_count_normalizer = normalizer(number_data_train[['case end count']])
-    # time_until_next_holiday_normalizer = normalizer(number_data_train[['time_until_next_holiday']])
-    # week_start_normalizer = normalizer(number_data_train[['week_start']])
-    # work_hours_normalizer = normalizer(number_data_train[['work_hours']])
-    workrate_normalizer = normalizer(number_data_train[[constants.ACTIVE_CASES]])
-
-    # number_data_train[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data_train[[constants.CASE_STEP_NUMBER_COLUMN]])
-    number_data_train[constants.AMOUNT_REQUESTED_COLUMN] = amount_requested_normalizer.transform(number_data_train[[constants.AMOUNT_REQUESTED_COLUMN]])
-    # number_data_train['case end count'] = case_end_count_normalizer.transform(number_data_train[['case end count']])
-    # number_data_train['time_until_next_holiday'] = time_until_next_holiday_normalizer.transform(number_data_train[['time_until_next_holiday']])
-    # number_data_train['week_start'] = week_start_normalizer.transform(number_data_train[['week_start']])
-    # number_data_train['work_hours'] = work_hours_normalizer.transform(number_data_train[['work_hours']])
-    number_data_train[constants.ACTIVE_CASES] = workrate_normalizer.transform(number_data_train[[constants.ACTIVE_CASES]])
-
-    X_train = keras.layers.concatenate([vector_case_position_train, number_data_train, vector_event_lag_train, vector_event_second_lag_train])
-
-    vector_case_position = enc.transform(test_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    vector_event_lag_test = enc.transform(test_data[['first_lag_event']]).toarray()
-    vector_event_second_lag_test = enc.transform(test_data[['second_lag_event']]).toarray()
-    # number_data = test_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
-    number_data = test_data[[constants.CASE_STEP_NUMBER_COLUMN, constants.AMOUNT_REQUESTED_COLUMN, constants.ACTIVE_CASES]]
-
-    # number_data[constants.CASE_STEP_NUMBER_COLUMN] = case_step_number_normalizer.transform(number_data[[constants.CASE_STEP_NUMBER_COLUMN]])
-    number_data[constants.AMOUNT_REQUESTED_COLUMN] = amount_requested_normalizer.transform(number_data[[constants.AMOUNT_REQUESTED_COLUMN]])
-    # number_data['case end count'] = case_end_count_normalizer.transform(number_data[['case end count']])
-    # number_data['time_until_next_holiday'] = time_until_next_holiday_normalizer.transform(number_data[['time_until_next_holiday']])
-    # number_data['week_start'] = week_start_normalizer.transform(number_data[['week_start']])
-    # number_data['work_hours'] = work_hours_normalizer.transform(number_data[['work_hours']])
-    number_data[constants.ACTIVE_CASES] = workrate_normalizer.transform(number_data[[constants.ACTIVE_CASES]])
-
-    print(number_data_train)
-    print(number_data)
-
-    X_test = keras.layers.concatenate([vector_case_position, number_data, vector_event_lag_test, vector_event_second_lag_test])
-
-    X_train = np.array(X_train).reshape(X_train.shape[0], X_train.shape[1], 1)
-    X_test = np.array(X_test).reshape(X_test.shape[0], X_test.shape[1], 1)
-
-    return X_train, X_test
-
-def preprocess_event_y(train_data, test_data, enc_next):
+def preprocess_event_y_reg(train_data, test_data, enc_next):
+    
+    
     y_train = enc_next.transform(train_data[['next event']]).toarray()
     y_test = enc_next.transform(test_data[['next event']]).toarray()
     return y_train, y_test
 
-def preprocess_event_y_labels(train_data, test_data, label_encoder):
-    y_train = label_encoder.transform(train_data[['next event']])
-    y_test = label_encoder.transform(test_data[['next event']])
+def preprocess_event_y_clf(train_data, test_data, label_encoder):
 
     y_train = np.array(y_train).reshape(y_train.shape[0],1)
     y_test = np.array(y_test).reshape(y_test.shape[0],1)
@@ -143,11 +79,11 @@ def preprocess_event_y_labels(train_data, test_data, label_encoder):
 
 def preprocess_event():
     full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
-    full_data[constants.TIME_SINCE_PREVIOUS_EVENT] = pd.to_datetime(
-        full_data[constants.TIME_SINCE_PREVIOUS_EVENT])
+    full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
+        full_data[constants.CASE_TIMESTAMP_COLUMN])
 
-    full_data[constants.TIME_SINCE_PREVIOUS_EVENT] = dataframe.groupby(
-        constants.CASE_ID_COLUMN)[constants.CASE_TIMESTAMP_COLUMN].shift(1, fill_value = 0)
+    full_data[constants.TIME_SINCE_PREVIOUS_EVENT] = full_data.groupby(
+        constants.CASE_ID_COLUMN)[constants.TIME_DIFFERENCE].shift(1, fill_value = 0)
 
     # full_data = correct_data(full_data)
     # full_data.is_weekend = full_data.is_weekend.replace({True: 1, False: 0})
@@ -159,15 +95,25 @@ def preprocess_event():
 
     # train_data.dropna(inplace=True)
     # test_data.dropna(inplace=True)
-
+    print("done splitting")
     enc = get_one_hot_encoder(train_data[[constants.CASE_POSITION_COLUMN]])
     enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
     # label_encoder = get_label_encoder(full_data['next event'])
     
     max_case_len = int(full_data['activity number in case'].max())
+    
+    train_data['amount requested normalized'], test_data['amount requested normalized'] = normalize(train_data[constants.AMOUNT_REQUESTED_COLUMN], test_data[constants.AMOUNT_REQUESTED_COLUMN])
+    train_data['time since previous event'], test_data['time since previous event'] = normalize(train_data[constants.TIME_SINCE_PREVIOUS_EVENT], test_data[constants.TIME_SINCE_PREVIOUS_EVENT])
+    print("normalizing done")
+    X_train, X_test = preprocess_event_X(train_data, enc, max_case_len), preprocess_event_X(test_data, enc, max_case_len)
 
-    X_train, X_test = preprocess_event_X(train_data, test_data, enc, max_case_len)
-    y_train, y_test = preprocess_event_y(train_data, test_data, enc_next, max_case_len)
+    y_train_reg = train_data[constants.TIME_DIFFERENCE]
+    y_test_reg = test_data[constants.TIME_DIFFERENCE]
+    
+    y_train_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+    y_test_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+    
+    reshaped = testing.reshape(len(test_data.index), max_case_len, num_of_features)
 
     return X_train, y_train, X_test, y_test, enc_next
 
