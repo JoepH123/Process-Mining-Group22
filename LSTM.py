@@ -35,23 +35,28 @@ def normalizer(data):
 
 def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
-    num_of_predictors = 0    # CHANGE THIS AS NEEDED, rn its time and amount requested
+    num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
 
     # number of features is the total number of distinct events plus the
     # number of other columns we use as predictors
     num_of_features = len(train_data[constants.CASE_POSITION_COLUMN].unique()) + num_of_predictors
 
+    normalizer = normalizer(train_data[[constants.AMOUNT_REQUESTED_COLUMN]])
+    train_data[constants.AMOUNT_REQUESTED_COLUMN] = normalizer.transform(train_data[[constants.AMOUNT_REQUESTED_COLUMN]])
+
+    normalizer = normalizer(train_data[[constants.TIME_SINCE_PREVIOUS_EVENT]])
+    train_data[constants.TIME_SINCE_PREVIOUS_EVENT] = normalizer.transform(train_data[[constants.TIME_SINCE_PREVIOUS_EVENT]])
+
     train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
     X_train = np.zeros((len(train_data.index), max_case_len, num_of_features), dtype=np.float32)
-
     i = 0
     row_counter = 0
     for case_id, group in train_grouped:
         event_sequence = []
         for index, row in group.iterrows():
             current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
-            #current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
-            #current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+            current_event.append(row[constants.TIME_SINCE_PREVIOUS_EVENT])
+            current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
 
             event_sequence.append(current_event)
             print(event_sequence)
@@ -76,8 +81,6 @@ def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
             # event_sequence.append()
             # X_train[] = event_sequence...
-    vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-
 
     # number_data_train = train_data[[constants.CASE_STEP_NUMBER_COLUMN, 'case end count', 'time_until_next_holiday', 'weekend', 'week_start', 'work_time', 'work_hours', 'is_holiday']]
 
@@ -140,6 +143,12 @@ def preprocess_event_y_labels(train_data, test_data, label_encoder):
 
 def preprocess_event():
     full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+    full_data[constants.TIME_SINCE_PREVIOUS_EVENT] = pd.to_datetime(
+        full_data[constants.TIME_SINCE_PREVIOUS_EVENT])
+
+    full_data[constants.TIME_SINCE_PREVIOUS_EVENT] = dataframe.groupby(
+        constants.CASE_ID_COLUMN)[constants.CASE_TIMESTAMP_COLUMN].shift(1, fill_value = 0)
+
     # full_data = correct_data(full_data)
     # full_data.is_weekend = full_data.is_weekend.replace({True: 1, False: 0})
     # full_data.is_work_time = full_data.is_work_time.replace({True: 1, False: 0})

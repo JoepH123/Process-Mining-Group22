@@ -36,6 +36,10 @@ after the current event happens."""
 ACTIVE_CASES = 'active cases'
 """The identifier of dataset column holding the amount requested in the case."""
 AMOUNT_REQUESTED_COLUMN = 'case:AMOUNT_REQ'
+TIME_SINCE_START_OF_CASE = 'case_relative_time'
+
+"""TODO: put into pipeline predictor (see implementation in LSTM code)"""
+TIME_SINCE_PREVIOUS_EVENT = 'time since previous event'
 
 # ----------------------OUTPUTS----------------------------------
 """The identifier of dataset column holding the next event."""
