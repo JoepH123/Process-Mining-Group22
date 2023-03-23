@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from predictors_columns import pipeline
 import splitter, constants
+from compute_and_convert_time import max_four_digit_time_rep_accurate
 
 def classification_performance(data, conf_matrix_name):
     """Prints out performance metrics for the classification task.
@@ -63,13 +64,21 @@ def regression_performance(data):
     :return: None
     """
     
-    print("Mean absolute error (time until next event): ", mean_absolute_error(
-        data[constants.TIME_DIFFERENCE], data[constants.TIME_DIFFERENCE_PREDICTION]))
-    print("Root mean squared error: ", mean_squared_error(data[constants.TIME_DIFFERENCE], 
-        data[constants.TIME_DIFFERENCE_PREDICTION], squared=False))
+    MAE = max_four_digit_time_rep_accurate(
+            mean_absolute_error(data[constants.TIME_DIFFERENCE],
+            data[constants.TIME_DIFFERENCE_PREDICTION]))
+    RMSE = max_four_digit_time_rep_accurate(
+            mean_squared_error(data[constants.TIME_DIFFERENCE], 
+            data[constants.TIME_DIFFERENCE_PREDICTION], squared=False))
     data_no_zero = data[data[constants.TIME_DIFFERENCE] != 0]
-    print("Root mean squared percentage error: ", np.sqrt(np.mean(np.square((
-        (data_no_zero[constants.TIME_DIFFERENCE] - data_no_zero[constants.TIME_DIFFERENCE_PREDICTION]) / data_no_zero[constants.TIME_DIFFERENCE])), axis=0)))
+    RMSPE = max_four_digit_time_rep_accurate(np.sqrt(np.mean(
+        np.square(((data_no_zero[constants.TIME_DIFFERENCE] 
+                    - data_no_zero[constants.TIME_DIFFERENCE_PREDICTION]) / 
+                   data_no_zero[constants.TIME_DIFFERENCE])), axis=0)))
+
+    print("Mean absolute error (time until next event): ", MAE)
+    print("Root mean squared error: ", RMSE)
+    print("Root mean squared percentage error: ", RMSPE)
 
 def time_execution():
     """A couroutine that prints a message it recieves through .send()

@@ -23,7 +23,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 
     # ------- ONLY FOR TESTING ----------
 
-    # full_data = full_data[:50000]
+    full_data = full_data[:100000]
 
     # ------- END -----------------------
 
