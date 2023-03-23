@@ -17,14 +17,15 @@ def classification_performance(data, conf_matrix_name):
     :type conf_matrix_name: string
     :return: None
     """
+    data[[constants.NEXT_EVENT, constants.NEXT_EVENT_PREDICTION]].astype('str')
     print("Accuracy score (next event): ", accuracy_score(
-        data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION]))
+        data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str')))
     print("Number of misclassifications: ", accuracy_score(
-        data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION], normalize=False))
+        data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str'), normalize=False))
     #print('Confusion matrix:')
     
     # create confusion matrix
-    cf_matrix = cm(data[constants.NEXT_EVENT], data[constants.NEXT_EVENT_PREDICTION])
+    cf_matrix = cm(data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str'))
 
     # normalize the confusion matrix
     cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
@@ -45,8 +46,8 @@ def classification_performance(data, conf_matrix_name):
     plt.show()
     plt.clf()
     
-    print("Classification report: ", classification_report(data[constants.NEXT_EVENT], 
-       data[constants.NEXT_EVENT_PREDICTION], zero_division=1))
+    print("Classification report: ", classification_report(data[constants.NEXT_EVENT].astype('str'), 
+       data[constants.NEXT_EVENT_PREDICTION].astype('str'), zero_division=1))
     
     # Experimental - use only if decided
     # print("Precision, recall, fscore, support with possible aggregation: ",

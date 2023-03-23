@@ -136,27 +136,34 @@ def compare_all_models(train_data, test_data, timer):
     cols = ['activity number in case', 'case end count',
             'days_until_next_holiday', 'is_weekend', 
             'seconds_since_week_start', 'is_work_time', 
-            'seconds_to_work_hours', 'is_holiday']
+            'seconds_to_work_hours', 'is_holiday',
+            'workrate', 'active cases']
 
-    print(train_data.columns)
-    
+    # ----------------- TRAIN DATASET ---------------------------------
     # copy so we don't modify the original training set
     train_data = copy.deepcopy(train_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
-    
-    cols.extend(names_ohe)
-    print(cols)
+    first_lag_ohe = pd.get_dummies(train_data['first_lag_event']).add_prefix('first_lag_')
+    second_lag_ohe = pd.get_dummies(train_data['second_lag_event']).add_prefix('second_lag_')
 
-    train_data = train_data.drop('name', axis=1).join(names_ohe).dropna()
+    cols_train = list(names_ohe.columns) + list(first_lag_ohe.columns) + list(second_lag_ohe.columns)
+
+    train_data = train_data.drop('name', axis=1).join(names_ohe).join(first_lag_ohe).join(second_lag_ohe).dropna()
     train_data['next_activity_id'] = pd.factorize(train_data[constants.NEXT_EVENT])[0]
-    
-    print(train_data)
-
+   
+    # --------------------- TEST DATASET -------------------------------
     # copy test dataset
     test_data = copy.deepcopy(test_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
     names_ohe = pd.get_dummies(test_data['name'])
-    test_data = test_data.drop('name', axis=1).join(names_ohe).dropna()
+    first_lag_ohe = pd.get_dummies(test_data['first_lag_event']).add_prefix('first_lag_')
+    second_lag_ohe = pd.get_dummies(test_data['second_lag_event']).add_prefix('second_lag_')
+    
+    cols_test = list(names_ohe.columns) + list(first_lag_ohe.columns) + list(second_lag_ohe.columns)
+
+    test_data = test_data.drop('name', axis=1).join(names_ohe).dropna().join(first_lag_ohe).join(second_lag_ohe).dropna()
     test_data['next_activity_id'] = pd.factorize(test_data[constants.NEXT_EVENT])[0]
+    
+    cols.extend([el for el in cols_train if el in cols_test])
 
     timer.send("Time to prepare columns (in seconds): ")
     
@@ -168,7 +175,7 @@ def compare_all_models(train_data, test_data, timer):
 
     timer.send("Time to train decision tree classifier (in seconds): ")
 
-    test_activity_model(test_data, dec_tree_clas, cols) 
+    test_activity_model(test_data, dec_tree_clas, cols)
     
     timer.send("Time to evaluate decision tree classifier (in seconds): ")
 

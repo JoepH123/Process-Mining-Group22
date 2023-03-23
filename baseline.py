@@ -67,6 +67,9 @@ def train_baseline_model(train_data_in, timer):
     exp_df = train_data[train_data[constants.TIME_DIFFERENCE].isnull()]
     train_data.dropna(inplace=True)
 
+    # Setting the correct types
+    train_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
+
     # calculate performance for train set
     print("-------------------------------------------------------------------")
     print('Train set:')

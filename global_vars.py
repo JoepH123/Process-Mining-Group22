@@ -252,7 +252,7 @@ def pipeline(data, timer):
     This pipeline combines all the functions defined above. It makes sure that all steps are executed, and it returns
     the total time that the pipeline took to execute. 
     """
-    resource_active_cases(data)
+    #resource_active_cases(data)
     time_based_columns(data, "time:timestamp")
 
     timer.send("Time to add global variables (in seconds): ")

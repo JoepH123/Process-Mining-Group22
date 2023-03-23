@@ -21,6 +21,12 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
 
+    # ------- ONLY FOR TESTING ----------
+
+    # full_data = full_data[:50000]
+
+    # ------- END -----------------------
+
     # Add calculated predictors
     data = predictors_columns.pipeline(full_data, timer)
     data = global_vars.pipeline(data, timer)
@@ -65,18 +71,20 @@ def main(args):
     # Condition on whether to re-run the data preprocessing
     if(generate):
         # Includes calculation of predictors
-        train_data, test_data = prepare_data(unprocessed_dataset,pipeline_dataset, timer)
+        train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
     else:
         # Read the data from the file
         train_data, test_data = read_data(pipeline_dataset)
-    
+
+
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
         train_data, timer)
+    # Evaluating the model
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
-
+    
     # DECISION TREE AND RANDOM FOREST
-    # decision_tree.compare_all_models(train_data, test_data, timer)
+    decision_tree.compare_all_models(train_data, test_data, timer)
 
 
 if __name__ == "__main__":
