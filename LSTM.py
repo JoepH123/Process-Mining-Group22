@@ -35,7 +35,7 @@ def normalizer(data):
 
 def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
-    num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
+    num_of_predictors = 0    # CHANGE THIS AS NEEDED, rn its time and amount requested
 
     # number of features is the total number of distinct events plus the
     # number of other columns we use as predictors
@@ -50,14 +50,14 @@ def preprocess_event_X(train_data, test_data, enc, max_case_len):
         event_sequence = []
         for index, row in group.iterrows():
             current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
-            current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
-            current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+            #current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
+            #current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
 
-            event_sequence.append(current_event_encoded)
+            event_sequence.append(current_event)
             print(event_sequence)
             event_index = num_of_features - num_of_predictors - 1
-            for event in event_sequence.reverse():
-                np.copyto(X_train[row_counter, event_index], np.array(event))
+            for event in reversed(event_sequence):
+                np.copyto(X_train[row_counter, event_index], np.array(event).astype('float32'))
                 event_index -= 1
 
             i += 1
@@ -145,13 +145,14 @@ def preprocess_event():
     # full_data.is_work_time = full_data.is_work_time.replace({True: 1, False: 0})
     # full_data.is_holiday = full_data.is_holiday.replace({True: 1, False: 0})
 
+    full_data.dropna(inplace=True)
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
 
-    train_data.dropna(inplace=True)
-    test_data.dropna(inplace=True)
+    # train_data.dropna(inplace=True)
+    # test_data.dropna(inplace=True)
 
-    enc = get_one_hot_encoder(full_data[[constants.CASE_POSITION_COLUMN]])
-    enc_next = get_one_hot_encoder(full_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
+    enc = get_one_hot_encoder(train_data[[constants.CASE_POSITION_COLUMN]])
+    enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
     # label_encoder = get_label_encoder(full_data['next event'])
     
     max_case_len = int(full_data['activity number in case'].max())
