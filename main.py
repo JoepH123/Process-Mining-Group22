@@ -69,7 +69,7 @@ def main(args):
         
 
     # Condition on whether to re-run the data preprocessing
-    if(generate):
+    if(generate==0):
         # Includes calculation of predictors
         train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
     else:
