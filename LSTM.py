@@ -37,27 +37,35 @@ def preprocess_event_X(train_data, test_data, enc, max_case_len):
 
     num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
 
-    # number of features is the total number of distinct events plus the 
+    # number of features is the total number of distinct events plus the
     # number of other columns we use as predictors
     num_of_features = len(train_data[constants.CASE_POSITION_COLUMN].unique()) + num_of_predictors
-    
+
     train_grouped = train_data.groupby([constants.CASE_ID_COLUMN])
     X_train = np.zeros((len(train_data.index), max_case_len, num_of_features), dtype=np.float32)
-    
+
     i = 0
+    row_counter = 0
     for case_id, group in train_grouped:
         event_sequence = []
-        time_sequence = []
-        amount_sequence = []
         for index, row in group.iterrows():
-            current_event_encoded = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
-            event_sequence.append([event_sequence, current_event_encoded])
+            current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
+            current_event.append(row[constants.CASE_TIMESTAMP_COLUMN])
+            current_event.append(row[constants.AMOUNT_REQUESTED_COLUMN])
+
+            event_sequence.append(current_event_encoded)
             print(event_sequence)
+            event_index = num_of_features - num_of_predictors - 1
+            for event in event_sequence.reverse():
+                np.copyto(X_train[row_counter, event_index], np.array(event))
+                event_index -= 1
+
             i += 1
+            row_counter += 1
             if i>2:
                 break
         break
-        
+
         # for row in group:
         #     #event_sequence.append(enc.transform(row[constants.CASE_POSITION_COLUMN]))
         #     print(row)
@@ -65,10 +73,7 @@ def preprocess_event_X(train_data, test_data, enc, max_case_len):
         #     i +=1
         #     if i>5:
         #         break
-            time_sequence.append(row[constants.CASE_TIMESTAMP_COLUMN])
-            amount_sequence.append(row[constants.AMOUNT_REQUESTED_COLUMN])
-            
-            
+
             # event_sequence.append()
             # X_train[] = event_sequence...
     vector_case_position_train = enc.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
