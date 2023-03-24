@@ -18,7 +18,6 @@ def classification_performance(data, conf_matrix_name):
     :type conf_matrix_name: string
     :return: None
     """
-    data[[constants.NEXT_EVENT, constants.NEXT_EVENT_PREDICTION]].astype('str')
     print("Accuracy score (next event): ", accuracy_score(
         data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str')))
     print("Number of misclassifications: ", accuracy_score(

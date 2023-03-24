@@ -10,7 +10,7 @@ def compute_case_relative_time(data):
     """
     start = time.time() ###
     
-    data['case_relative_time'] = 0.0
+    data[constants.TIME_SINCE_START_OF_CASE] = 0.0
     all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     
     print("Compute case relative time") ###
@@ -39,7 +39,7 @@ def compute_case_relative_time(data):
                 # print(time_diff)
                 time_diff = time_diff.total_seconds()
                 # print(time_diff)
-                data.loc[i, 'case_relative_time'] = time_diff
+                data.loc[i, constants.TIME_SINCE_START_OF_CASE] = time_diff
                 
     end = time.time() ###
     print(f"Function time taken: {end-start}") ###          
@@ -54,7 +54,7 @@ def compute_case_lag_event_column(data, lag, column_name):
     
     lag (int) : Integer that indicates the number of what number of lags we want 
                 to add as a column. e.g. lag=1, adds the column for the first lag 
-                of the constants.CASE_POSITION_COLUMN column
+                of the constants.CURRENT_EVENT column
     column_name (str) : The name of the column for the lagged events. 
     """
     start = time.time() ###
@@ -65,7 +65,7 @@ def compute_case_lag_event_column(data, lag, column_name):
     all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     for case in all_cases:
         case_data = data[data[constants.CASE_ID_COLUMN] == case].copy()
-        case_data[column_name] = case_data[constants.CASE_POSITION_COLUMN].shift(lag, fill_value='no_lagged_events')
+        case_data[column_name] = case_data[constants.CURRENT_EVENT].shift(lag, fill_value='no_lagged_events')
         list_cases_with_lagged_column.append(case_data)
     total_data_with_added_column = pd.concat(list_cases_with_lagged_column)
     data_with_new_column = total_data_with_added_column.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
@@ -106,7 +106,7 @@ def compute_workrate_employees(data):
         for i, row in case_data.iterrows():
             if i+1 < len(case_data.index):  # last event of a case can be ignored
                 emp_of_event = str(row['org:resource'])
-                time_of_event = case_data.loc[i + 1, 'case_relative_time'] - case_data.loc[i, 'case_relative_time']
+                time_of_event = case_data.loc[i + 1, constants.TIME_SINCE_START_OF_CASE] - case_data.loc[i, constants.TIME_SINCE_START_OF_CASE]
                 
                 if time_of_event < 0: ###
                     print("NegativeValueERROR: There are negative responsetimes by employees. This is impossible. \

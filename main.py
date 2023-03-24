@@ -20,10 +20,10 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     full_data = pd.read_csv(unprocessed_dataset)
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
-
+    full_data = full_data.astype({constants.NEXT_EVENT: 'str'})
     # ------- ONLY FOR TESTING ----------
 
-    full_data = full_data[:100000]
+    # full_data = full_data[:100000]
 
     # ------- END -----------------------
 
@@ -35,7 +35,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     data.to_csv(pipeline_dataset)
 
     train_data, test_data = splitter.split_dataset(data, 0.2)
-    splitter.time_series_split(train_data, 5)
+    # splitter.time_series_split(train_data, 5)
 
     timer.send("Time to split dataset (in seconds): ")
 
@@ -43,8 +43,11 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 
 def read_data(pipeline_dataset):
     data = pd.read_csv(pipeline_dataset)
-    
+    data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
+        data[constants.CASE_TIMESTAMP_COLUMN])
+    data = data.astype({constants.NEXT_EVENT: 'str'})
     train_data, test_data = splitter.split_dataset(data, 0.2)
+    # splitter.time_series_split(train_data, 5)
     return train_data, test_data
 
 def main(args):
@@ -69,17 +72,17 @@ def main(args):
         
 
     # Condition on whether to re-run the data preprocessing
-    if not(generate):
+    if generate:
         # Includes calculation of predictors
         train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
     else:
         # Read the data from the file
         train_data, test_data = read_data(pipeline_dataset)
 
-
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
         train_data, timer)
+
     # Evaluating the model
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
     
@@ -93,7 +96,7 @@ if __name__ == "__main__":
         "--dataset", help="year of dataset", default=2012, type=int
     )
     parser.add_argument(
-        "--generate", help="0 if the data should be generated, 1 if it should be read from file", default=0, type=int
+        "--generate", help="1 if the data should be generated, 0 if it should be read from file", default=0, type=int
     )
 
     args = parser.parse_args()

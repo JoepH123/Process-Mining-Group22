@@ -95,7 +95,7 @@ def add_liquidity(df, date_column):
     return df
 
 
-def resource_active_cases(dataframe, time_col=constants.CASE_TIMESTAMP_COLUMN, event_col=constants.CASE_POSITION_COLUMN,
+def resource_active_cases(dataframe, time_col=constants.CASE_TIMESTAMP_COLUMN, event_col=constants.CURRENT_EVENT,
                           status_col='lifecycle:transition', resource_col='org:resource',
                           time_between_events_col=constants.TIME_DIFFERENCE, case_id_col=constants.CASE_ID_COLUMN,
                           act_nr_col=constants.CASE_STEP_NUMBER_COLUMN, next_event_col=constants.NEXT_EVENT,
@@ -253,7 +253,7 @@ def pipeline(data, timer):
     the total time that the pipeline took to execute. 
     """
     #resource_active_cases(data)
-    time_based_columns(data, "time:timestamp")
+    time_based_columns(data, constants.CASE_TIMESTAMP_COLUMN)
 
     timer.send("Time to add global variables (in seconds): ")
     return data

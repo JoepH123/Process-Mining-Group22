@@ -49,7 +49,7 @@ def preprocess_event_X(data, enc, max_case_len):
     for case_id, group in grouped:
         event_sequence = []
         for index, row in group.iterrows():
-            current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
+            current_event = list(enc.transform(row[[constants.CURRENT_EVENT]].to_numpy().reshape(1, -1)).toarray()[0])
             current_event.append(row['amount requested normalized'])
             current_event.append(row['time since previous event'])
 
@@ -96,11 +96,11 @@ def preprocess_event():
     # train_data.dropna(inplace=True)
     # test_data.dropna(inplace=True)
     print("done splitting")
-    enc = get_one_hot_encoder(train_data[[constants.CASE_POSITION_COLUMN]])
+    enc = get_one_hot_encoder(train_data[[constants.CURRENT_EVENT]])
     enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
     # label_encoder = get_label_encoder(full_data['next event'])
     
-    max_case_len = int(full_data['activity number in case'].max())
+    max_case_len = int(full_data[constants.CASE_STEP_NUMBER_COLUMN].max())
     
     train_data['amount requested normalized'], test_data['amount requested normalized'] = normalize(train_data[constants.AMOUNT_REQUESTED_COLUMN], test_data[constants.AMOUNT_REQUESTED_COLUMN])
     train_data['time since previous event'], test_data['time since previous event'] = normalize(train_data[constants.TIME_SINCE_PREVIOUS_EVENT], test_data[constants.TIME_SINCE_PREVIOUS_EVENT])
@@ -110,8 +110,8 @@ def preprocess_event():
     y_train_reg = train_data[constants.TIME_DIFFERENCE]
     y_test_reg = test_data[constants.TIME_DIFFERENCE]
     
-    y_train_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    y_test_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
+    y_train_clf = enc_next.transform(train_data[[constants.CURRENT_EVENT]]).toarray()
+    y_test_clf = enc_next.transform(train_data[[constants.CURRENT_EVENT]]).toarray()
     
     reshaped = testing.reshape(len(test_data.index), max_case_len, num_of_features)
 

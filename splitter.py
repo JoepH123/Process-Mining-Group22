@@ -28,7 +28,7 @@ def convert_raw_dataset(raw_path, converted_path):
     dataframe['time until next event'] = - dataframe.groupby(
         constants.CASE_ID_COLUMN)[constants.CASE_TIMESTAMP_COLUMN].diff(-1).dt.total_seconds()
     dataframe['next event'] = dataframe.groupby(
-        constants.CASE_ID_COLUMN)[constants.CASE_POSITION_COLUMN].shift(-1)
+        constants.CASE_ID_COLUMN)[constants.CURRENT_EVENT].shift(-1)
 
     # get the number of the current event in the case (starts at 0)
     dataframe[constants.CASE_STEP_NUMBER_COLUMN] = dataframe.groupby(

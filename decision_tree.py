@@ -133,15 +133,15 @@ def test_time_model(test_data, clf, columns):
     return 1
 
 def compare_all_models(train_data, test_data, timer):
-    cols = ['activity number in case', 'case end count',
+    cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
             'days_until_next_holiday', 'is_weekend', 
             'seconds_since_week_start', 'is_work_time', 
             'seconds_to_work_hours', 'is_holiday',
-            'workrate', 'active cases']
+            'workrate', constants.ACTIVE_CASES]
 
     # ----------------- TRAIN DATASET ---------------------------------
     # copy so we don't modify the original training set
-    train_data = copy.deepcopy(train_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
+    train_data = copy.deepcopy(train_data).rename(columns={constants.CURRENT_EVENT: 'name'})
     names_ohe = pd.get_dummies(train_data['name'])
     first_lag_ohe = pd.get_dummies(train_data['first_lag_event']).add_prefix('first_lag_')
     second_lag_ohe = pd.get_dummies(train_data['second_lag_event']).add_prefix('second_lag_')
@@ -153,7 +153,7 @@ def compare_all_models(train_data, test_data, timer):
    
     # --------------------- TEST DATASET -------------------------------
     # copy test dataset
-    test_data = copy.deepcopy(test_data).rename(columns={constants.CASE_POSITION_COLUMN: 'name'})
+    test_data = copy.deepcopy(test_data).rename(columns={constants.CURRENT_EVENT: 'name'})
     names_ohe = pd.get_dummies(test_data['name'])
     first_lag_ohe = pd.get_dummies(test_data['first_lag_event']).add_prefix('first_lag_')
     second_lag_ohe = pd.get_dummies(test_data['second_lag_event']).add_prefix('second_lag_')

@@ -17,12 +17,12 @@ def load_data(train_path=constants.TRAINING_DATA_PATH, test_path=constants.TEST_
     :param total_path: path to the converted dataset with all data (as before the train-test split)
     :type total_path: string
     """
-    training_data_2012 = pd.read_csv(train_path, parse_dates=['case:REG_DATE', 'time:timestamp']) 
-    training_data_2012 = training_data_2012.sort_values(by=["time:timestamp"])
-    test_data_2012 = pd.read_csv(test_path, parse_dates=['case:REG_DATE', 'time:timestamp']) 
-    test_data_2012 = test_data_2012.sort_values(by=["time:timestamp"])
-    total_data_2012 = pd.read_csv(total_path, parse_dates=['case:REG_DATE', 'time:timestamp'])
-    total_data_2012 = total_data_2012.sort_values(by=["time:timestamp"])
+    training_data_2012 = pd.read_csv(train_path, parse_dates=['case:REG_DATE', constants.CASE_TIMESTAMP_COLUMN]) 
+    training_data_2012 = training_data_2012.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
+    test_data_2012 = pd.read_csv(test_path, parse_dates=['case:REG_DATE', constants.CASE_TIMESTAMP_COLUMN]) 
+    test_data_2012 = test_data_2012.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
+    total_data_2012 = pd.read_csv(total_path, parse_dates=['case:REG_DATE', constants.CASE_TIMESTAMP_COLUMN])
+    total_data_2012 = total_data_2012.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
     return training_data_2012, test_data_2012, total_data_2012
 
 
@@ -36,8 +36,8 @@ def create_plot_without_removed_cases_with_split_line(training_data_2012, test_d
     :param test_data_2012: Dataframe containing the test dataset
     :type test_data_2012: pd.DataFrame
     """
-    fig = go.Figure(data=go.Scatter(x=training_data_2012["time:timestamp"], y=training_data_2012["case:concept:name"], mode='markers', marker={'color': '#aecf9e', 'size': 2}, hoverinfo='skip', showlegend=False))
-    fig.add_trace(go.Scatter(x=test_data_2012["time:timestamp"], y=test_data_2012["case:concept:name"], mode='markers', marker={'color': '#2ab4ea', 'size': 2}, hoverinfo='skip', showlegend=False))
+    fig = go.Figure(data=go.Scatter(x=training_data_2012[constants.CASE_TIMESTAMP_COLUMN], y=training_data_2012["case:concept:name"], mode='markers', marker={'color': '#aecf9e', 'size': 2}, hoverinfo='skip', showlegend=False))
+    fig.add_trace(go.Scatter(x=test_data_2012[constants.CASE_TIMESTAMP_COLUMN], y=test_data_2012["case:concept:name"], mode='markers', marker={'color': '#2ab4ea', 'size': 2}, hoverinfo='skip', showlegend=False))
     fig.add_trace(go.Scatter(x=[datetime.datetime(2012, 2, 6, 15, 35, 0), datetime.datetime(2012, 2, 6, 15, 35, 0)], y=[170000,215000], mode='lines', line={'color': 'red'}, hoverinfo='skip', showlegend=False))
     return fig.show()
 
@@ -54,19 +54,19 @@ def create_plot_with_removed_cases(train, test, total):
     :param total: Dataframe containing the entire dataset, before the train-test split. 
     :type total: pd.DataFrame
     """
-    test_cases = np.unique(train['case:concept:name'])
-    train_cases = np.unique(test['case:concept:name'])
-    total['in_test'] = total['case:concept:name'].isin(test_cases)
-    total['in_train'] = total['case:concept:name'].isin(train_cases)
+    test_cases = np.unique(train[constants.CASE_ID_COLUMN])
+    train_cases = np.unique(test[constants.CASE_ID_COLUMN])
+    total['in_test'] = total[constants.CASE_ID_COLUMN].isin(test_cases)
+    total['in_train'] = total[constants.CASE_ID_COLUMN].isin(train_cases)
 
     total['color'] = total.apply(lambda x: 'blue' if x['in_train'] else 'red' if x['in_test'] else 'grey_2' if 
-                     total[total['case:concept:name'] == x['case:concept:name']]['time:timestamp'].min()+ datetime.timedelta(days = 30) < x['time:timestamp']
-                     else 'grey_4' if pd.Timestamp('2011-12-18 15:35:28.600000+0000', tz='UTC') < total[total['case:concept:name'] == x['case:concept:name']]['time:timestamp'].min() < pd.Timestamp('2012-01-01 15:35:28.600000+0000', tz='UTC')
-                     else 'grey_3' if total[total['case:concept:name'] == x['case:concept:name']]['time:timestamp'].min() < pd.Timestamp('2012-01-01 15:35:28.600000+0000', tz='UTC')
-                     else 'grey_1' if x['time:timestamp'] < pd.Timestamp('2012-02-06 15:35:28.600000+0000', tz='UTC') else 'grey_2', axis = 1)
+                     total[total[constants.CASE_ID_COLUMN] == x[constants.CASE_ID_COLUMN]][constants.CASE_TIMESTAMP_COLUMN].min()+ datetime.timedelta(days = 30) < x[constants.CASE_TIMESTAMP_COLUMN]
+                     else 'grey_4' if pd.Timestamp('2011-12-18 15:35:28.600000+0000', tz='UTC') < total[total[constants.CASE_ID_COLUMN] == x[constants.CASE_ID_COLUMN]][constants.CASE_TIMESTAMP_COLUMN].min() < pd.Timestamp('2012-01-01 15:35:28.600000+0000', tz='UTC')
+                     else 'grey_3' if total[total[constants.CASE_ID_COLUMN] == x[constants.CASE_ID_COLUMN]][constants.CASE_TIMESTAMP_COLUMN].min() < pd.Timestamp('2012-01-01 15:35:28.600000+0000', tz='UTC')
+                     else 'grey_1' if x[constants.CASE_TIMESTAMP_COLUMN] < pd.Timestamp('2012-02-06 15:35:28.600000+0000', tz='UTC') else 'grey_2', axis = 1)
     
-    fig = px.scatter(total, x="time:timestamp", y="case:concept:name", color='color',
-                     hover_data=['case:concept:name', 'time:timestamp', 'concept:name'],
+    fig = px.scatter(total, x=constants.CASE_TIMESTAMP_COLUMN, y="case:concept:name", color='color',
+                     hover_data=[constants.CASE_ID_COLUMN, constants.CASE_TIMESTAMP_COLUMN, constants.CURRENT_EVENT],
                      color_discrete_sequence= ['#bce6ba', 'rgb(0, 0, 0)', 'rgb(0, 0, 0)', 'rgb(0,0,0)', 'rgb(0,0,0)', '#a9e2fb'])
 
     opacity = {'blue': 1, 'grey_1': 0.02, 'red': 1, 'grey_2': 0.50, 'grey_3': 0.2, 'grey_4': 0.1}

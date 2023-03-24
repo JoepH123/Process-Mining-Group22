@@ -68,7 +68,7 @@ def train_baseline_model(train_data_in, timer):
     train_data.dropna(inplace=True)
 
     # Setting the correct types
-    train_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
+    train_data = train_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
 
     # calculate performance for train set
     print("-------------------------------------------------------------------")
@@ -90,6 +90,9 @@ def evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, te
     
     # also remove missing values:
     test_data.dropna(inplace=True)
+
+    # Setting the correct types
+    test_data = test_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
 
     # calculate performance for test set
     print("-------------------------------------------------------------------")

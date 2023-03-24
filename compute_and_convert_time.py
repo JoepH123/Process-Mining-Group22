@@ -21,21 +21,21 @@ def compute_case_relative_time(data):
     :param data: The dataframe for which we want to compute the case_relative_time column
     :type data: pd.DataFrame
     """
-    data['case_relative_time'] = 0.0
-    all_cases = data['case:concept:name'].unique().tolist()
+    data[constants.TIME_SINCE_START_OF_CASE] = 0.0
+    all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
     for case in all_cases:
-        case_data = data[data['case:concept:name'] == case]
+        case_data = data[data[constants.CASE_ID_COLUMN] == case]
         first_case_counter = 0
         for i, row in case_data.iterrows():
             if first_case_counter < 1: # first event of case
-                start_time = data.loc[i, 'time:timestamp']
+                start_time = data.loc[i, constants.CASE_TIMESTAMP_COLUMN]
                 first_case_counter += 1
                 continue # Because the case_relative_time column was initialized with zeros
             else:
-                current_time = data.loc[i, 'time:timestamp']
+                current_time = data.loc[i, constants.CASE_TIMESTAMP_COLUMN]
                 time_diff = current_time - start_time
                 time_diff = time_diff.total_seconds()
-                data.loc[i, 'case_relative_time'] = time_diff
+                data.loc[i, constants.TIME_SINCE_START_OF_CASE] = time_diff
     return data
 
 
@@ -46,8 +46,8 @@ def load_data_and_compute_case_relative_time(path):
     :param path: The path to the location of the dataset that we want to analyze
     :type path: string
     """
-    training_data_2012 = pd.read_csv(path, parse_dates=['case:REG_DATE', 'time:timestamp']) 
-    training_data_2012 = training_data_2012.sort_values(by=["time:timestamp"])
+    training_data_2012 = pd.read_csv(path, parse_dates=['case:REG_DATE', constants.CASE_TIMESTAMP_COLUMN]) 
+    training_data_2012 = training_data_2012.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN])
     data = compute_case_relative_time(training_data_2012)
     return data
 
@@ -60,11 +60,11 @@ def compute_avg_case_duration(data_with_time_column):
     :param data_with_time_column: A dataframe with the case_relative_time column
     :type data_with_time_column: pd.DataFrame
     """
-    all_cases = data_with_time_column['concept:name'].unique().tolist()
+    all_cases = data_with_time_column[constants.CURRENT_EVENT].unique().tolist()
     nr_cases = len(all_cases)
     total_duration = 0
     for case in all_cases:
-        case_data = data_with_time_column[data_with_time_column['concept:name'] == case]
+        case_data = data_with_time_column[data_with_time_column[constants.CURRENT_EVENT] == case]
         case_duration = case_data.case_relative_time.tolist()[-1]
         total_duration += case_duration
     avg_duration = total_duration / nr_cases
