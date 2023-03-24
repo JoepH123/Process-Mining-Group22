@@ -96,7 +96,7 @@ if __name__ == "__main__":
         "--dataset", help="year of dataset", default=2012, type=int
     )
     parser.add_argument(
-        "--generate", help="1 if the data should be generated, 0 if it should be read from file", default=0, type=int
+        "--generate", help="0 if the data should be read, 1 if it should be generated", default=1, type=int
     )
 
     args = parser.parse_args()
