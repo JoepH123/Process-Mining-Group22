@@ -18,7 +18,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(unprocessed_dataset)
-    
+
     # ------- ONLY FOR TESTING ----------
 
     full_data = full_data[-100000:].reset_index(drop=True)
@@ -71,9 +71,11 @@ def main(args):
     # Condition on whether to re-run the data preprocessing
     if generate:
         # Includes calculation of predictors
+        print('generating dataset....')
         train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
     else:
         # Read the data from the file
+        print('reading dataset....')
         train_data, test_data = read_data(pipeline_dataset)
 
     # BASELINE MODEL
