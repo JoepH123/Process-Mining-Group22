@@ -18,13 +18,10 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(unprocessed_dataset)
-    full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
-        full_data[constants.CASE_TIMESTAMP_COLUMN])
-    full_data = full_data.astype({constants.NEXT_EVENT: 'str'})
+    
     # ------- ONLY FOR TESTING ----------
 
-    # full_data = full_data[:100000]
-
+    full_data = full_data[-100000:].reset_index(drop=True)
     # ------- END -----------------------
 
     # Add calculated predictors
@@ -88,7 +85,6 @@ def main(args):
     
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

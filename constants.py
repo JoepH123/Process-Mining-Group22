@@ -8,7 +8,7 @@ PIPELINED_DATASET_PATH = './Datasets/BPI_Challenge_2012_pipeline.csv'
 
 # ----------------------2017 DATASETS-------------------------------
 """The path to the raw dataset, in .xes.gz"""
-RAW_2017_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
+RAW_2017_DATASET_PATH = './Datasets/BPI_Challenge_2017.xes.gz'
 """The path to the converted dataset, in .csv"""
 CONVERTED_2017_DATASET_PATH = './Datasets/BPI_Challenge_2017.csv'
 """The path to the dataset with added predictors, in .csv"""
