@@ -78,13 +78,19 @@ def main(args):
         print('reading dataset....')
         train_data, test_data = read_data(pipeline_dataset)
 
+    # FORWARD CHAINING EXAMPLE
+    # fc_train, fc_test = splitter.time_series_split(train_data, 5)
+    # for i in range(0, 4):
+    #     print("Tail of train of",i+1,":\n", fc_train[i].tail())
+    #     print("Tail of test of",i+1,":\n", fc_test[i].tail())
+
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
         train_data, timer)
 
     # Evaluating the model
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
-    
+
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
 

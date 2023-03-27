@@ -117,11 +117,7 @@ def time_series_split(dataframe: pd.DataFrame, k: int):
         training_data.append(pd.concat(df_list_cumulative))
         test_data.append(partition_list[i+1])
 
-    # for frame in training_data:
-    #     print("Shape of train dataframe ", frame.shape)
-
-    # for frame in test_data:
-    #     print("Shape of test dataframe ", frame.shape)
+    return training_data, test_data
 
 
 if __name__ == "__main__":
