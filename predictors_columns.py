@@ -3,6 +3,58 @@ import pandas as pd
 import time
 import constants
 
+
+def compute_basic_features(dataframe):
+    """Computes the basic features for the dataset such as next evet, case number, case count.
+
+    :param dataframe: the dataframe to compute the features on
+
+    :return: The input dataframe with the computed features
+    :rtype: dataframe
+    """
+    dataframe[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
+        dataframe[constants.CASE_TIMESTAMP_COLUMN])
+
+    # get the event that follows the current one for each case (row), and the time elapsed
+    dataframe[constants.TIME_DIFFERENCE] = - dataframe.groupby(
+        constants.CASE_ID_COLUMN)[constants.CASE_TIMESTAMP_COLUMN].diff(-1).dt.total_seconds()
+    dataframe[constants.NEXT_EVENT] = dataframe.groupby(
+        constants.CASE_ID_COLUMN)[constants.CURRENT_EVENT].shift(-1)
+    dataframe = dataframe.astype({constants.NEXT_EVENT: 'str'})
+
+    # get the number of the current event in the case (starts at 0)
+    dataframe[constants.CASE_STEP_NUMBER_COLUMN] = dataframe.groupby(
+        constants.CASE_ID_COLUMN).cumcount()
+
+    # how many events are left until the end of the case
+    dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] = dataframe.groupby(
+        constants.CASE_ID_COLUMN).cumcount(ascending=False)
+
+    # # get only the events that start or end a case
+    # countframe = dataframe[(dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0) |
+    #     (dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0)]
+
+    # how many cases start after the current event, inclusive
+    dataframe[constants.CASE_START_COUNT] = dataframe[
+        dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0].groupby(
+            constants.CASE_STEP_NUMBER_COLUMN).cumcount(ascending=False) + 1
+
+    # how many cases end before the current event, inclusive
+    dataframe[constants.CASE_END_COUNT] = dataframe[
+        dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0].groupby(
+            constants.CASE_STEP_NUMBER_INVERSE_COLUMN).cumcount() + 1
+
+    dataframe.at[-1, constants.CASE_START_COUNT] = 0
+    dataframe.at[0, constants.CASE_END_COUNT] = 0
+    dataframe[constants.CASE_START_COUNT].fillna(method='bfill', inplace = True)
+    dataframe[constants.CASE_END_COUNT].fillna(method='ffill', inplace = True)
+
+    # Change column names if dataset is from 2017
+    if "case:AMOUNT_REQ" not in dataframe.columns and "case:RequestedAmount" in dataframe.columns:
+        dataframe.rename(columns={"case:RequestedAmount": "case:AMOUNT_REQ"}, inplace=True)
+
+    return dataframe
+
 def compute_case_relative_time(data):
     """
     Compute case relative time based event timestamp columns. e.g. 0 seconds at the first event, 
@@ -149,6 +201,7 @@ def pipeline(data, timer):
     the total time that the pipeline took to execute. 
     """
 
+    data = compute_basic_features(data)
     data = compute_case_relative_time(data)
     data = compute_case_lag_event_column(data, lag=1, column_name='first_lag_event')
     data = compute_case_lag_event_column(data, lag=2, column_name='second_lag_event')
