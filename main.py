@@ -22,13 +22,10 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # ------- ONLY FOR TESTING ----------
 
     full_data = full_data[-100000:].reset_index(drop=True)
-    print(full_data.head())
     # ------- END -----------------------
 
     # Add calculated predictors
     data = predictors_columns.pipeline(full_data, timer)
-    print(data.head())
-    print(data.columns)
     data = global_vars.pipeline(data, timer)
 
     # Save the data to a file so we don't have to do this again
