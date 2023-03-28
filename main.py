@@ -51,7 +51,7 @@ def main(args):
     # Parsed arguments
     dataset = args.dataset
     generate = args.generate
-    
+
     # set up the timer
     timer = time_execution()
     timer.__next__()
@@ -66,7 +66,7 @@ def main(args):
         # 2012 Dataset
         unprocessed_dataset = constants.CONVERTED_DATASET_PATH
         pipeline_dataset = constants.PIPELINED_DATASET_PATH
-        
+
 
     # Condition on whether to re-run the data preprocessing
     if generate:
