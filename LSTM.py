@@ -201,7 +201,7 @@ def train_model(X_train, y_train_clf, y_train_reg, epochs, file=None):
 if __name__ == "__main__":
     X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess_event()
     # X_test = np.load("X_test.npy")
-    test_model(X_test, y_test_clf, y_test_reg, enc)
-    # model = train_model(X_train, y_train_clf,y_train_reg, 10)
+    #test_model(X_test, y_test_clf, y_test_reg, enc)
+    model = train_model(X_train, y_train_clf,y_train_reg, 50)
     # model = load_model('LSTM_models/class_model_more_inputs.h5')
     #test(X_test, y_test, model, enc)
