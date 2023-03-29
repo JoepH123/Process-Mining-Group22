@@ -65,18 +65,18 @@ def time_based_columns(dataframe, date_column: str, start_hours= 9, stop_hours= 
     min((holiday - x.date()).days for holiday in holidays if (holiday - x.date()).days > 0))
     dataframe['is_holiday'] = dataframe[date_column].apply(lambda x: True if x.date() in holidays else False)
 
-    dataframe['seconds_since_week_start'] = dataframe[date_column].apply(
-        lambda x: pd.Timedelta('{} days {}'.format(x.weekday(), x.time())).total_seconds())
+    dataframe['hours_since_week_start'] = dataframe[date_column].apply(
+        lambda x: round(pd.Timedelta(('{} days {}'.format(x.weekday(), x.time()))).total_seconds()/3600, 0))
     dataframe['is_work_time'] = dataframe[date_column].apply(
         lambda x: False if 4 < x.weekday() < 7 else True if start_hours <= x.hour < stop_hours else False)
-    dataframe['seconds_to_work_hours'] = dataframe[date_column].apply(
-        lambda x: pd.Timedelta('0h0m').total_seconds() if x.weekday() < 5 and start_hours <= x.hour < stop_hours else
-        (datetime.datetime.combine(x.date(), datetime.time(start_hours, 0, 0,
-                                                           0)) - x).total_seconds() if x.weekday() < 5 and start_hours > x.hour else
-        (datetime.datetime.combine(x.date() + datetime.timedelta(days=1), datetime.time(start_hours, 0, 0,
-                                                                                        0)) - x).total_seconds() if x.weekday() < 4 and stop_hours <= x.hour else
-        (datetime.datetime.combine((x.date() + datetime.timedelta(days=7 - x.weekday())),
-                                   datetime.time(start_hours, 0, 0, 0)) - x).total_seconds())
+    dataframe['hours_to_work_hours'] = dataframe[date_column].apply(
+        lambda x: 0 if x.weekday() < 5 and start_hours <= x.hour < stop_hours else
+        round((datetime.datetime.combine(x.date(), datetime.time(start_hours, 0, 0,
+                                                           0)) - x).total_seconds()/3600,0) if x.weekday() < 5 and start_hours > x.hour else
+        round((datetime.datetime.combine(x.date() + datetime.timedelta(days=1), datetime.time(start_hours, 0, 0,
+                                                                                        0)) - x).total_seconds()/3600,0) if x.weekday() < 4 and stop_hours <= x.hour else
+        round((datetime.datetime.combine((x.date() + datetime.timedelta(days=7 - x.weekday())),
+                                   datetime.time(start_hours, 0, 0, 0)) - x).total_seconds(),0))
 
     dataframe['is_weekend'] = dataframe[date_column].apply(lambda x: True if 4 < x.weekday() < 7 else True
     if x.weekday() == 4 and x.hour > stop_hours - 1 else True

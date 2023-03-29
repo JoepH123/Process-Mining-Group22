@@ -136,8 +136,8 @@ def test_time_model(test_data, clf, columns):
 def compare_all_models(train_data, test_data, timer):
     cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
             'days_until_next_holiday', 'is_weekend', 
-            'seconds_since_week_start', 'is_work_time', 
-            'seconds_to_work_hours', 'is_holiday',
+            'hours_since_week_start', 'is_work_time',
+            'hours_to_work_hours', 'is_holiday',
             'workrate', constants.ACTIVE_CASES]
 
     # ----------------- TRAIN DATASET ---------------------------------
