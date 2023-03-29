@@ -56,7 +56,7 @@ def preprocess_event_X(data, enc, max_case_len):
 
 
 def preprocess_event():
-    full_data = pd.read_csv('./Datasets/BPI_Challenge_2012_pipeline_LSTM.csv')
+    full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
 
@@ -72,7 +72,7 @@ def preprocess_event():
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
     
     enc = get_one_hot_encoder(train_data[[constants.CURRENT_EVENT]].to_numpy())
-    enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])).to_numpy())
+    enc_next = get_one_hot_encoder(train_data[['next event']].to_numpy())
     
     max_case_len = int(full_data[constants.CASE_STEP_NUMBER_COLUMN].max())
     # max_case_len = 174
