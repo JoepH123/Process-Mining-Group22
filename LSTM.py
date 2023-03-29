@@ -40,6 +40,8 @@ def preprocess_event_X(data, enc, max_case_len):
         event_sequence = []
         for index, row in group.iterrows():
             current_event = list(enc.transform(row[[constants.CURRENT_EVENT]].to_numpy().reshape(1, -1)).toarray()[0])
+            # print(current_event)
+            # print(row[[constants.CURRENT_EVENT]])
             current_event.append(row['amount requested normalized'])
             current_event.append(row['time since previous event'])
 
@@ -69,11 +71,11 @@ def preprocess_event():
     full_data.dropna(inplace=True)
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
     
-    enc = get_one_hot_encoder(train_data[[constants.CURRENT_EVENT]])
-    enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
+    enc = get_one_hot_encoder(train_data[[constants.CURRENT_EVENT]].to_numpy())
+    enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])).to_numpy())
     
     max_case_len = int(full_data[constants.CASE_STEP_NUMBER_COLUMN].max())
-    
+    # max_case_len = 174
     train_data['amount requested normalized'], test_data['amount requested normalized'] = normalize(train_data[constants.AMOUNT_REQUESTED_COLUMN], test_data[constants.AMOUNT_REQUESTED_COLUMN])
     train_data['time since previous event'], test_data['time since previous event'] = normalize(train_data[constants.TIME_SINCE_PREVIOUS_EVENT], test_data[constants.TIME_SINCE_PREVIOUS_EVENT])
 
@@ -84,6 +86,12 @@ def preprocess_event():
     
     y_train_clf = enc_next.transform(train_data[['next event']]).toarray()
     y_test_clf = enc_next.transform(train_data[['next event']]).toarray()
+
+    np.save('X_test.npy', X_test)
+
+    # X_test.to_csv('X_test.csv')
+    # y_test_clf.to_csv('y_test_clf.csv')
+    # y_test_reg.to_csv('y_test_reg.csv')
 
     return X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc_next
 
@@ -174,6 +182,27 @@ def train_event(X_train, y_train_clf, y_train_reg, epochs):
 
     return model
 
+def test_model(X_test, y_test_clf, y_test_reg, enc):
+    model = keras.models.load_model("LSTM_models/model_07-27919.88.h5")
+    print(X_test.shape)
+    print(model.summary())
+    preds = model.predict(X_test)
+    
+    print(y_test_clf)
+    print(y_test_reg)
+    # print(preds[0].isna)
+    prediction_clf = enc.inverse_transform(preds[0])
+    y_test_clf_dec = enc.inverse_transform(y_test_clf)
+    print(prediction_clf)
+    print(y_test_clf_dec)
+    # y_test_clf[constants.NEXT_EVENT_PREDICTION] = preds[0]
+    y_test_clf = pd.DataFrame(y_test_clf_dec, columns=[constants.NEXT_EVENT]).join(pd.DataFrame(prediction_clf, columns=[constants.NEXT_EVENT_PREDICTION]))
+    classification_performance(y_test_clf, "Confusion_Matrices/conf_matrix_LSTM_test.png")
+
+    # y_test_reg[constants.TIME_DIFFERENCE_PREDICTION] = preds[1]
+    y_test_reg = pd.DataFrame(y_test_reg, columns=[constants.TIME_DIFFERENCE]).join(pd.DataFrame(preds[1], columns=[constants.TIME_DIFFERENCE_PREDICTION]))
+    regression_performance(y_test_reg)
+    
 
 def test(X_test, y_test_clf, y_test_reg, model, enc):
     predictions = model.predict(X_test)
@@ -198,6 +227,8 @@ def train_model(X_train, y_train_clf, y_train_reg, epochs, file=None):
 
 if __name__ == "__main__":
     X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess_event()
-    model = train_model(X_train, y_train_clf,y_train_reg, 10)
+    # X_test = np.load("X_test.npy")
+    test_model(X_test, y_test_clf, y_test_reg, enc)
+    # model = train_model(X_train, y_train_clf,y_train_reg, 10)
     # model = load_model('LSTM_models/class_model_more_inputs.h5')
     #test(X_test, y_test, model, enc)

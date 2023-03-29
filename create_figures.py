@@ -918,7 +918,7 @@ def create_baseline_tables(train_data, path):
     dfi.export(means.head(30), path+'/30_first_Baseline_timings.png', table_conversion='matplotlib')
 
 # Running the functions:
-if __name__ == '__main__':
+def generate_plots():
     train, test, total = load_data()
     create_plot_without_removed_cases_with_split_line(train, test)
     #create_plot_with_removed_cases(train, test, total)  #Gives an error currently

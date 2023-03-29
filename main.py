@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import predictors_columns
 import global_vars
-import splitter, constants, baseline
+import splitter, constants, baseline, create_figures
 from performance_measures import time_execution
 import decision_tree
 import argparse
@@ -51,6 +51,7 @@ def main(args):
     # Parsed arguments
     dataset = args.dataset
     generate = args.generate
+    plots = args.plots
 
     # set up the timer
     timer = time_execution()
@@ -94,6 +95,9 @@ def main(args):
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
 
+    if plots:
+        create_figures.generate_plots()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -101,6 +105,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--generate", help="0 if the data should be read, 1 if it should be generated", default=1, type=int
+    )
+    parser.add_argument(
+        "--plots", help="0 if plots should not be generated, 1 if plots should be generated", default=0, type=int
     )
 
     args = parser.parse_args()
