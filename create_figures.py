@@ -13,6 +13,8 @@ import copy
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import splitter
+import dataframe_image as dfi
+import compute_and_convert_time as time_conversion
 
 
 def load_data(total_path=constants.PIPELINED_DATASET_PATH):
@@ -216,7 +218,12 @@ def compute_model_performances(train_data, test_data):
         (RMSPE, MAE), Random Forest (also Regression) on the train set (precision, recall, f1-score, accuracy, RMSPE, MAE)
     :rtype: tuple
     """
-    cols = [column for column in train_data.columns if column not in [constants.NEXT_EVENT, constants.TIME_DIFFERENCE]]
+    cols = [column for column in train_data.columns if column not in [constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'Unnamed: 0', 'Unnamed: 0.1',
+                                                                      'case:REG_DATE','number of activity in case inverse', 'case end count']]
+
+
+    train_data = train_data.astype({constants.NEXT_EVENT: 'str'})
+    test_data = test_data.astype({constants.NEXT_EVENT: 'str'})
 
     train_data = copy.deepcopy(train_data)
     train_data['next_activity_id'] = pd.factorize(train_data[constants.NEXT_EVENT])[0]
@@ -224,12 +231,22 @@ def compute_model_performances(train_data, test_data):
     test_data = copy.deepcopy(test_data)
     test_data['next_activity_id'] = pd.factorize(test_data[constants.NEXT_EVENT])[0]
 
-    train_data_dummies = train_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id']]
-    for column in cols:
+    train_data_dummies = train_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday',
+                                           'seconds_since_week_start', 'seconds_to_work_hours']]
+    for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday','seconds_since_week_start', 'seconds_to_work_hours']]:
         train_data_dummies = train_data_dummies.join(pd.get_dummies(train_data[column]).add_prefix(column + '_'))
 
-    test_data_dummies = test_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id']]
-    for column in cols:
+
+    test_data_dummies = test_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday',
+                                           'seconds_since_week_start', 'seconds_to_work_hours']]
+    for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN, constants.CASE_STEP_NUMBER_COLUMN,
+                                           'case start count',
+                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases',
+                                           'days_until_next_holiday',
+                                           'seconds_since_week_start', 'seconds_to_work_hours']]:
         test_data_dummies = test_data_dummies.join(pd.get_dummies(test_data[column]).add_prefix(column + '_'))
 
     for col in [column for column in train_data_dummies.columns if column not in test_data_dummies.columns]:
@@ -292,9 +309,8 @@ def isolated_lags_plots(folder, n_lags = 10):
     isolated_test = test_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, constants.CASE_ID_COLUMN, constants.CURRENT_EVENT, constants.CASE_TIMESTAMP_COLUMN]].copy()
 
     for i in tqdm(range(1, n_lags+1)):
-        isolated_train = predictors_columns.compute_case_lag_event_column(isolated_train, lag=i,column_name='lag_' + str(lags))
-        isolated_test = predictors_columns.compute_case_lag_event_column(isolated_test, lag=i,column_name='lag_' + str(lags))
-
+        isolated_train = predictors_columns.compute_case_lag_event_column(isolated_train, lag=i,column_name='lag_' + str(i))
+        isolated_test = predictors_columns.compute_case_lag_event_column(isolated_test, lag=i,column_name='lag_' + str(i))
 
 
         DT_prec, DT_recall, DT_f1, DT_acc, RF_prec, RF_recall, RF_f1, RF_acc, LR_rmspe, LR_mae, RF_rmspe, RF_mae, RF_train_prec, RF_train_recall, RF_train_f1, RF_train_acc, RF_train_rmspe, RF_train_mae = compute_model_performances(isolated_train.drop(
@@ -331,11 +347,11 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_precisions[i - 1]),
-                     xy=(float(i) - 0.04, DT_precisions[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, DT_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test precision performance against number of lags', fontsize=16)
@@ -352,11 +368,11 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, DT_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, DT_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test accuracy performance against number of lags', fontsize=16)
@@ -373,9 +389,9 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test recall performance against number of lags', fontsize=16)
@@ -392,9 +408,9 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test f1-score performance against number of lags', fontsize=16)
@@ -411,9 +427,9 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(LR_rmspes[i - 1]), xy=(float(i) - 0.08, LR_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(LR_rmspes[i - 1]), xy=(float(i) - 0.08, LR_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Linear Regression', 'Random Forest Regression'])
     fig.suptitle('Model test RMSPE performance against number of lags', fontsize=16)
@@ -430,9 +446,9 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(LR_maes[i - 1]), xy=(float(i) - 0.08, LR_maes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(LR_maes[i - 1]), xy=(float(i) - 0.08, LR_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Linear Regression', 'Random Forest Regression'])
     fig.suptitle('Model test MAE performance against number of lags', fontsize=16)
@@ -449,11 +465,11 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_precisions[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest precision performance against number of lags', fontsize=16)
@@ -470,11 +486,11 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest accuracy performance against number of lags', fontsize=16)
@@ -491,10 +507,10 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_recalls[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_recalls[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_recalls[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest recall performance against number of lags', fontsize=16)
@@ -511,10 +527,10 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_f1s[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_f1s[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_f1s[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest F1-score performance against number of lags', fontsize=16)
@@ -531,10 +547,10 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_rmspes[i - 1]),
-                     xy=(float(i) - 0.08, RF_train_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_rmspes[i - 1]),
+    #                  xy=(float(i) - 0.08, RF_train_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest RMSPE performance against number of lags', fontsize=16)
@@ -551,10 +567,10 @@ def isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_maes[i - 1]),
-                     xy=(float(i) - 0.08, RF_train_maes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_maes[i - 1]),
+    #                  xy=(float(i) - 0.08, RF_train_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest MAE performance against number of lags', fontsize=16)
@@ -602,8 +618,8 @@ def non_isolated_lags_plots(folder, n_lags = 10):
 
 
     for i in tqdm(range(1, n_lags+1)):
-        non_isolated_train = predictors_columns.compute_case_lag_event_column(train_data, lag=i,column_name='lag_' + str(lags))
-        non_isolated_test = predictors_columns.compute_case_lag_event_column(test_data, lag=i,column_name='lag_' + str(lags))
+        non_isolated_train = predictors_columns.compute_case_lag_event_column(train_data, lag=i,column_name='lag_' + str(i))
+        non_isolated_test = predictors_columns.compute_case_lag_event_column(test_data, lag=i,column_name='lag_' + str(i))
 
 
 
@@ -641,11 +657,11 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_precisions[i - 1]),
-                     xy=(float(i) - 0.04, DT_precisions[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, DT_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test precision performance against number of lags', fontsize=16)
@@ -662,11 +678,11 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, DT_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, DT_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test accuracy performance against number of lags', fontsize=16)
@@ -683,9 +699,9 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test recall performance against number of lags', fontsize=16)
@@ -702,9 +718,9 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Desicion Tree', 'Random Forest'])
     fig.suptitle('Model test f1-score performance against number of lags', fontsize=16)
@@ -721,9 +737,9 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(LR_rmspes[i - 1]), xy=(float(i) - 0.08, LR_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(LR_rmspes[i - 1]), xy=(float(i) - 0.08, LR_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Linear Regression', 'Random Forest Regression'])
     fig.suptitle('Model test RMSPE performance against number of lags', fontsize=16)
@@ -740,9 +756,9 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(LR_maes[i - 1]), xy=(float(i) - 0.08, LR_maes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(LR_maes[i - 1]), xy=(float(i) - 0.08, LR_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Linear Regression', 'Random Forest Regression'])
     fig.suptitle('Model test MAE performance against number of lags', fontsize=16)
@@ -759,11 +775,11 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_precisions[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_precisions[i - 1]),
-                     xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_precisions[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_precisions[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest precision performance against number of lags', fontsize=16)
@@ -780,11 +796,11 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_accuracies[i - 1]),
-                     xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_accuracies[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest accuracy performance against number of lags', fontsize=16)
@@ -801,10 +817,10 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_recalls[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_recalls[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_recalls[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_recalls[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest recall performance against number of lags', fontsize=16)
@@ -821,10 +837,10 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_f1s[i - 1]),
-                     xy=(float(i) - 0.04, RF_train_f1s[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_f1s[i - 1]),
+    #                  xy=(float(i) - 0.04, RF_train_f1s[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest F1-score performance against number of lags', fontsize=16)
@@ -841,10 +857,10 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_rmspes[i - 1]),
-                     xy=(float(i) - 0.08, RF_train_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_rmspes[i - 1]),
+    #                  xy=(float(i) - 0.08, RF_train_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_rmspes[i - 1]), xy=(float(i) - 0.08, RF_rmspes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest RMSPE performance against number of lags', fontsize=16)
@@ -861,10 +877,10 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     y_min, y_max = ax.get_ylim()
     ax.set_ylim(y_min, y_max + abs(y_max - y_min) * 0.1)
 
-    for i in lags:
-        plt.annotate(str(RF_train_maes[i - 1]),
-                     xy=(float(i) - 0.08, RF_train_maes[i - 1] + abs(y_max - y_min) * 0.03))
-        plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    # for i in lags:
+    #     plt.annotate(str(RF_train_maes[i - 1]),
+    #                  xy=(float(i) - 0.08, RF_train_maes[i - 1] + abs(y_max - y_min) * 0.03))
+    #     plt.annotate(str(RF_maes[i - 1]), xy=(float(i) - 0.08, RF_maes[i - 1] + abs(y_max - y_min) * 0.03))
 
     plt.legend(['Train set', 'Test set'])
     fig.suptitle('Random Forest MAE performance against number of lags', fontsize=16)
@@ -873,10 +889,39 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     plt.show()
     fig.savefig(folder + '/train_MAE_plot.png')
 
+def create_baseline_tables(train_data, path):
+    preds = train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[constants.NEXT_EVENT].agg(pd.Series.mode).to_frame()
+    for i in preds.index:
+        if type(preds.at[i, constants.NEXT_EVENT]) != str:
+            if len(preds.at[i, constants.NEXT_EVENT])<1:
+                preds.drop(i, inplace=True)
+            else:
+                preds.at[i, constants.NEXT_EVENT] = preds.at[i, constants.NEXT_EVENT][-1]
+    preds.columns = ['Predicted next event']
+    preds.index = preds.index.astype(int, copy=False)
+    preds.index.name = 'Position current event'
+    dfi.export(preds.head(30), path+'/30_first_Baseline_events.png', table_conversion='matplotlib')
+
+    means = train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[constants.TIME_DIFFERENCE].mean().to_frame()
+    means.columns = ['Predicted Seconds until event']
+    means.index.name = 'Position current event'
+    means.index = means.index.astype(int, copy = False)
+    means=means.astype(object)
+    for index in means.index:
+        if means.at[index, 'Predicted Seconds until event'] < 100:
+            if means.at[index, 'Predicted Seconds until event'] < 1:
+                means.at[index, 'Predicted Seconds until event'] = str(round(means.at[index, 'Predicted Seconds until event'],2))+' seconds'
+            else:
+                means.at[index, 'Predicted Seconds until event'] = str(int(means.at[index, 'Predicted Seconds until event']))+' seconds'
+        else:
+            means.at[index, 'Predicted Seconds until event'] = time_conversion.max_four_digit_time_rep_naive(means.at[index, 'Predicted Seconds until event'])
+    dfi.export(means.head(30), path+'/30_first_Baseline_timings.png', table_conversion='matplotlib')
+
 # Running the functions:
 def generate_plots():
     train, test, total = load_data()
     create_plot_without_removed_cases_with_split_line(train, test)
-    create_plot_with_removed_cases(train, test, total)
+    #create_plot_with_removed_cases(train, test, total)  #Gives an error currently
     isolated_lags_plots('lag_plots/Isolated_lags')
-    isolated_lags_plots('lag_plots/general_lags')
+    non_isolated_lags_plots('lag_plots/general_lags')
+    create_baseline_tables(train, 'Other_images')

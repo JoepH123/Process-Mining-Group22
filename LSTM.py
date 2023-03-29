@@ -56,7 +56,7 @@ def preprocess_event_X(data, enc, max_case_len):
 
 
 def preprocess_event():
-    full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+    full_data = pd.read_csv('./Datasets/BPI_Challenge_2012_pipeline_LSTM.csv')
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
 
