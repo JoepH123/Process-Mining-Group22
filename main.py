@@ -21,7 +21,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 
     # ------- ONLY FOR TESTING ----------
 
-    full_data = full_data[-100000:].reset_index(drop=True)
+    # full_data = full_data[-100000:].reset_index(drop=True)
     # ------- END -----------------------
 
     # Add calculated predictors
