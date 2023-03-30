@@ -44,8 +44,8 @@ def classification_performance(data, conf_matrix_name):
     # display the visualization of the confusion matrix, save it as png
     fig = ax.get_figure()
     fig.savefig(conf_matrix_name)
-    plt.show()
-    plt.clf()
+    #plt.show()
+    #plt.clf()
     
     print("Classification report: ", classification_report(data[constants.NEXT_EVENT].astype('str'), 
        data[constants.NEXT_EVENT_PREDICTION].astype('str'), zero_division=1))

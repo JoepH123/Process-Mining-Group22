@@ -11,6 +11,7 @@ import numpy as np
 from datetime import datetime
 from baseline import classification_performance, regression_performance
 from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 def importance(model, X_val, y_val):
     r = permutation_importance(model, X_val, y_val, n_repeats=10, random_state=0)
@@ -172,7 +173,7 @@ def compare_all_models(train_data, test_data, timer):
     print("Next activity:")
     clf = DecisionTreeClassifier()
     dec_tree_clas = train_activity_model(train_data, clf, cols)
-
+    
     timer.send("Time to train decision tree classifier (in seconds): ")
 
     test_activity_model(test_data, dec_tree_clas, cols)
@@ -190,6 +191,21 @@ def compare_all_models(train_data, test_data, timer):
     test_activity_model(test_data, rand_forest_class, cols)
     
     timer.send("Time to evaluation random forest classifier (in seconds): ")
+
+    #print("MLP Classifier:")
+    #print("-----------------------------")
+    #print("Next activity:")
+    #clf = MLPClassifier()
+    #mlp_class = train_activity_model(train_data, clf, cols)
+
+    #timer.send("Time to train MLP classifier (in seconds): ")
+
+    #test_activity_model(test_data, mlp_class, cols)
+    
+    print("################################################################")
+    print("##################### TIME TO NEXT EVENT #######################")
+    print("################################################################")
+    
 
     print("Linear Regression:")
     print("-----------------------------")
@@ -214,3 +230,15 @@ def compare_all_models(train_data, test_data, timer):
     test_time_model(test_data, rand_forest_regr, cols)
 
     timer.send("Time to evaluate random forest regression (in seconds): ")
+    
+
+    print("MLP Regression:")
+    print("-----------------------------")
+    print("Time to next activity:")
+    reg = MLPRegressor()
+    mlp_regr = train_time_model(train_data, reg, cols)
+
+    timer.send("Time to train MLP regression (in seconds): ")
+
+    test_time_model(test_data, mlp_regr, cols)
+

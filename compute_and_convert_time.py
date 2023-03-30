@@ -46,7 +46,8 @@ def load_data_and_compute_case_relative_time(path):
     :param path: The path to the location of the dataset that we want to analyze
     :type path: string
     """
-    training_data_2012 = pd.read_csv(path, parse_dates=['case:REG_DATE', 'time:timestamp']) 
+    #training_data_2012 = pd.read_csv(path, parse_dates=['case:REG_DATE', 'time:timestamp']) 
+    training_data_2012 = pd.read_csv(path, parse_dates=['time:timestamp']) 
     training_data_2012 = training_data_2012.sort_values(by=["time:timestamp"])
     data = compute_case_relative_time(training_data_2012)
     return data
@@ -113,7 +114,6 @@ def max_four_digit_time_rep_accurate(seconds):
     multiplier = [365.25/7, 7, 24, 60, 60]
     names = ['years', 'weeks', 'days', 'hours', 'minutes', 'seconds']
     for i in range(len(units)):
-        print(units)
         if units[i] >= 10:
             if i == 5:
                 return f"{round(units[i], 2)} seconds"

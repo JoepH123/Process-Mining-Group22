@@ -8,9 +8,11 @@ import matplotlib.pyplot as plt
 import predictors_columns
 import global_vars
 import splitter, constants, baseline
+#import neural_network
 from performance_measures import time_execution
 import decision_tree
 import argparse
+from compute_and_convert_time import *
 
 def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # do this if the files are not split already
@@ -23,7 +25,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 
     # ------- ONLY FOR TESTING ----------
 
-    full_data = full_data[:100000]
+    # full_data = full_data[:400000]
 
     # ------- END -----------------------
 
@@ -38,11 +40,13 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     splitter.time_series_split(train_data, 5)
 
     timer.send("Time to split dataset (in seconds): ")
-
-    return train_data, test_data
+    
+    # return train_data, test_data
 
 def read_data(pipeline_dataset):
     data = pd.read_csv(pipeline_dataset)
+    
+    print(f"Average case duration: {max_four_digit_time_rep_accurate(compute_avg_case_duration(data))}")
     
     train_data, test_data = splitter.split_dataset(data, 0.2)
     return train_data, test_data
@@ -69,22 +73,27 @@ def main(args):
         
 
     # Condition on whether to re-run the data preprocessing
-    if not(generate):
+    if(generate):
         # Includes calculation of predictors
-        train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
-    else:
-        # Read the data from the file
-        train_data, test_data = read_data(pipeline_dataset)
+        #train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
+        prepare_data(unprocessed_dataset, pipeline_dataset, timer)
+    #else:
+    #    # Read the data from the file
+    train_data, test_data = read_data(pipeline_dataset)
 
 
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
-        train_data, timer)
+       train_data, timer)
     # Evaluating the model
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
     
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
+
+    # Neural Network
+    # neural_network.run_activity_model(train_data, test_data, timer)
+    
 
 
 if __name__ == "__main__":
@@ -93,7 +102,7 @@ if __name__ == "__main__":
         "--dataset", help="year of dataset", default=2012, type=int
     )
     parser.add_argument(
-        "--generate", help="0 if the data should be read, 1 if it should be generated", default=1, type=int
+        "--generate", help="0 if the data should be read, 1 if it should be generated", default=0, type=int
     )
 
     args = parser.parse_args()
