@@ -13,6 +13,7 @@ from baseline import classification_performance, regression_performance
 from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 import matplotlib.pyplot as plt
+import warnings
 
 def importance(model, X_val, y_val):
     r = permutation_importance(model, X_val, y_val, n_repeats=10, random_state=0)
@@ -135,11 +136,19 @@ def test_time_model(test_data, clf, columns):
     return 1
 
 def compare_all_models(train_data, test_data, timer):
-    cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
+    try:
+        cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
             'days_until_next_holiday', 'is_weekend', 
             'hours_since_week_start', 'is_work_time',
             'hours_to_work_hours', 'is_holiday',
             'workrate', constants.ACTIVE_CASES]
+    except:
+        warnings.warn('old dataset detected! It is advised to regenerate the dataset and rerun the code!')
+        cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
+                'days_until_next_holiday', 'is_weekend',
+                'seconds_since_week_start', 'is_work_time',
+                'seconds_to_work_hours', 'is_holiday',
+                'workrate', constants.ACTIVE_CASES]
 
     # ----------------- TRAIN DATASET ---------------------------------
     # copy so we don't modify the original training set
