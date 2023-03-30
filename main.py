@@ -57,6 +57,9 @@ def main(args):
     # set up the timer
     timer = time_execution()
     timer.__next__()
+    
+    if plots:
+        warnings.warn('Plots are currently generated, This might take a while')
 
 
     # Condition in the dataset version
