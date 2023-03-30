@@ -182,14 +182,14 @@ def compare_all_models(train_data, test_data, timer):
     
     print(importances)
 
-    #fig, ax = plt.subplots()
-    #importances.plot.bar(ax=ax)
-    #ax.set_title('Feature importances for the Decision Tree classifier')
-    #ax.set_ylabel('Mean decrease in impurity')
-    #plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
-    #fig.tight_layout()
-    #plt.show()
-    #fig.savefig('Feature_importances/DT_feature_importance')
+    fig, ax = plt.subplots()
+    importances.plot.bar(ax=ax)
+    ax.set_title('Feature importances for the Decision Tree classifier')
+    ax.set_ylabel('Mean decrease in impurity')
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    fig.tight_layout()
+    plt.show()
+    fig.savefig('Feature_importances/DT_feature_importance')
 
     # results = permutation_importance(dec_tree_clas, train_data[cols], train_data[constants.TIME_DIFFERENCE],
     #                                  n_repeats=10, random_state=500, n_jobs=-1)
@@ -222,14 +222,14 @@ def compare_all_models(train_data, test_data, timer):
     std = pd.Series(stds, index = cols)
 
 
-    #fig, ax = plt.subplots()
-    #importances.plot.bar(yerr=std[importances.index], ax=ax)
-    #ax.set_title('Feature importances for the random forest classifier')
-    #ax.set_ylabel('Mean decrease in impurity')
-    #plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
-    #fig.tight_layout()
-    #plt.show()
-    #fig.savefig('Feature_importances/RF_classifier_feature_importance')
+    fig, ax = plt.subplots()
+    importances.plot.bar(yerr=std[importances.index], ax=ax)
+    ax.set_title('Feature importances for the random forest classifier')
+    ax.set_ylabel('Mean decrease in impurity')
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    fig.tight_layout()
+    plt.show()
+    fig.savefig('Feature_importances/RF_classifier_feature_importance')
 
     # results = permutation_importance(rand_forest_class, train_data[cols], train_data[constants.TIME_DIFFERENCE],
     #                                  n_repeats=10, random_state=500, n_jobs=-1)
@@ -276,14 +276,14 @@ def compare_all_models(train_data, test_data, timer):
     coefficients.sort_values(ascending=False, inplace=True)
     coefficients = coefficients[:10]
 
-    #fig, ax = plt.subplots()
-    #importances.plot.bar(ax=ax)
-    #ax.set_title('Feature importances for the Linear Regression')
-    #ax.set_ylabel('Coefficient size')
-    #plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
-    #fig.tight_layout()
-    #plt.show()
-    #fig.savefig('Feature_importances/LR_feature_importance')
+    fig, ax = plt.subplots()
+    importances.plot.bar(ax=ax)
+    ax.set_title('Feature importances for the Linear Regression')
+    ax.set_ylabel('Coefficient size')
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    fig.tight_layout()
+    plt.show()
+    fig.savefig('Feature_importances/LR_feature_importance')
 
     test_time_model(test_data, lin_regr, cols)
 
@@ -302,14 +302,14 @@ def compare_all_models(train_data, test_data, timer):
     importances = importances[:10]
     std = pd.Series(stds, index=cols)
 
-    #fig, ax = plt.subplots()
-    #importances.plot.bar(yerr=std[importances.index], ax=ax)
-    #ax.set_title('Feature importances for the random forest regressor')
-    #ax.set_ylabel('Mean decrease in impurity')
-    #plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
-    #fig.tight_layout()
-    #plt.show()
-    #fig.savefig('Feature_importances/RF_regressor_feature_importance')
+    fig, ax = plt.subplots()
+    importances.plot.bar(yerr=std[importances.index], ax=ax)
+    ax.set_title('Feature importances for the random forest regressor')
+    ax.set_ylabel('Mean decrease in impurity')
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    fig.tight_layout()
+    plt.show()
+    fig.savefig('Feature_importances/RF_regressor_feature_importance')
 
     # results = permutation_importance(rand_forest_regr, train_data[cols], train_data[constants.TIME_DIFFERENCE], n_repeats=10, random_state=500, n_jobs=-1)
     # permutation_importances = pd.Series(results.importances_mean, index = cols)
