@@ -65,18 +65,18 @@ def time_based_columns(dataframe, date_column: str, start_hours= 9, stop_hours= 
     min((holiday - x.date()).days for holiday in holidays if (holiday - x.date()).days > 0))
     dataframe['is_holiday'] = dataframe[date_column].apply(lambda x: True if x.date() in holidays else False)
 
-    dataframe['seconds_since_week_start'] = dataframe[date_column].apply(
-        lambda x: pd.Timedelta('{} days {}'.format(x.weekday(), x.time())).total_seconds())
+    dataframe['hours_since_week_start'] = dataframe[date_column].apply(
+        lambda x: round(pd.Timedelta(('{} days {}'.format(x.weekday(), x.time()))).total_seconds()/3600, 0))
     dataframe['is_work_time'] = dataframe[date_column].apply(
         lambda x: False if 4 < x.weekday() < 7 else True if start_hours <= x.hour < stop_hours else False)
-    dataframe['seconds_to_work_hours'] = dataframe[date_column].apply(
-        lambda x: pd.Timedelta('0h0m').total_seconds() if x.weekday() < 5 and start_hours <= x.hour < stop_hours else
-        (datetime.datetime.combine(x.date(), datetime.time(start_hours, 0, 0,
-                                                           0)) - x).total_seconds() if x.weekday() < 5 and start_hours > x.hour else
-        (datetime.datetime.combine(x.date() + datetime.timedelta(days=1), datetime.time(start_hours, 0, 0,
-                                                                                        0)) - x).total_seconds() if x.weekday() < 4 and stop_hours <= x.hour else
-        (datetime.datetime.combine((x.date() + datetime.timedelta(days=7 - x.weekday())),
-                                   datetime.time(start_hours, 0, 0, 0)) - x).total_seconds())
+    dataframe['hours_to_work_hours'] = dataframe[date_column].apply(
+        lambda x: 0 if x.weekday() < 5 and start_hours <= x.hour < stop_hours else
+        round((datetime.datetime.combine(x.date(), datetime.time(start_hours, 0, 0,
+                                                           0)) - x).total_seconds()/3600,0) if x.weekday() < 5 and start_hours > x.hour else
+        round((datetime.datetime.combine(x.date() + datetime.timedelta(days=1), datetime.time(start_hours, 0, 0,
+                                                                                        0)) - x).total_seconds()/3600,0) if x.weekday() < 4 and stop_hours <= x.hour else
+        round((datetime.datetime.combine((x.date() + datetime.timedelta(days=7 - x.weekday())),
+                                   datetime.time(start_hours, 0, 0, 0)) - x).total_seconds(),0))
 
     dataframe['is_weekend'] = dataframe[date_column].apply(lambda x: True if 4 < x.weekday() < 7 else True
     if x.weekday() == 4 and x.hour > stop_hours - 1 else True
@@ -95,7 +95,7 @@ def add_liquidity(df, date_column):
     return df
 
 
-def resource_active_cases(dataframe, time_col=constants.CASE_TIMESTAMP_COLUMN, event_col=constants.CASE_POSITION_COLUMN,
+def resource_active_cases(dataframe, time_col=constants.CASE_TIMESTAMP_COLUMN, event_col=constants.CURRENT_EVENT,
                           status_col='lifecycle:transition', resource_col='org:resource',
                           time_between_events_col=constants.TIME_DIFFERENCE, case_id_col=constants.CASE_ID_COLUMN,
                           act_nr_col=constants.CASE_STEP_NUMBER_COLUMN, next_event_col=constants.NEXT_EVENT,
@@ -253,7 +253,7 @@ def pipeline(data, timer):
     the total time that the pipeline took to execute. 
     """
     #resource_active_cases(data)
-    time_based_columns(data, "time:timestamp")
+    time_based_columns(data, constants.CASE_TIMESTAMP_COLUMN)
 
     timer.send("Time to add global variables (in seconds): ")
     return data

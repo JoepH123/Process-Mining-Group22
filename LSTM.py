@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 import splitter
 import constants
 from sklearn.metrics import accuracy_score
-from decision_tree import correct_data
-from baseline import classification_performance, regression_performance
+from performance_measures import classification_performance, regression_performance
 
 plt.style.use('fivethirtyeight')
 
@@ -21,15 +20,6 @@ def get_one_hot_encoder(data):
     enc = OneHotEncoder(handle_unknown='ignore')
     enc.fit(data)
     return enc
-
-# Normalizes numerical data
-def normalize(train_data, test_data):
-    scaler = StandardScaler()
-    train_data_reshape = train_data.to_numpy().reshape(1, -1)
-    print(train_data_reshape)
-    test_data_reshape = test_data.to_numpy().reshape(1, -1)
-    scaler.fit(train_data_reshape)
-    return scaler.transform(train_data_reshape)[0], scaler.transform(test_data_reshape)[0]
 
 def normalize(train_data, test_data):
     train_mean = train_data.mean()
@@ -41,7 +31,7 @@ def preprocess_event_X(data, enc, max_case_len):
     
     # number of features is the total number of distinct events plus the
     # number of other columns we use as predictors
-    num_of_features = len(enc.get_feature_names()) + num_of_predictors
+    num_of_features = len(enc.get_feature_names_out()) + num_of_predictors
     grouped = data.groupby([constants.CASE_ID_COLUMN])
     X = np.zeros((len(data.index), max_case_len, num_of_features), dtype=np.float32)
 
@@ -49,7 +39,9 @@ def preprocess_event_X(data, enc, max_case_len):
     for case_id, group in grouped:
         event_sequence = []
         for index, row in group.iterrows():
-            current_event = list(enc.transform(row[[constants.CASE_POSITION_COLUMN]].to_numpy().reshape(1, -1)).toarray()[0])
+            current_event = list(enc.transform(row[[constants.CURRENT_EVENT]].to_numpy().reshape(1, -1)).toarray()[0])
+            # print(current_event)
+            # print(row[[constants.CURRENT_EVENT]])
             current_event.append(row['amount requested normalized'])
             current_event.append(row['time since previous event'])
 
@@ -59,23 +51,9 @@ def preprocess_event_X(data, enc, max_case_len):
                 np.copyto(X[row_counter, event_index], np.array(event).astype('float32'))
                 event_index -= 1
             row_counter += 1
-        print("done case ", case_id)
     return X
 
 
-def preprocess_event_y_reg(train_data, test_data, enc_next):
-    
-    
-    y_train = enc_next.transform(train_data[['next event']]).toarray()
-    y_test = enc_next.transform(test_data[['next event']]).toarray()
-    return y_train, y_test
-
-def preprocess_event_y_clf(train_data, test_data, label_encoder):
-
-    y_train = np.array(y_train).reshape(y_train.shape[0],1)
-    y_test = np.array(y_test).reshape(y_test.shape[0],1)
-
-    return y_train, y_test
 
 def preprocess_event():
     full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
@@ -92,30 +70,24 @@ def preprocess_event():
 
     full_data.dropna(inplace=True)
     train_data, test_data = splitter.split_dataset(full_data, 0.2)
-
-    # train_data.dropna(inplace=True)
-    # test_data.dropna(inplace=True)
-    print("done splitting")
-    enc = get_one_hot_encoder(train_data[[constants.CASE_POSITION_COLUMN]])
-    enc_next = get_one_hot_encoder(train_data[['next event']].append(pd.DataFrame(['END'], columns=['next event'])))
-    # label_encoder = get_label_encoder(full_data['next event'])
     
-    max_case_len = int(full_data['activity number in case'].max())
+    enc = get_one_hot_encoder(train_data[[constants.CURRENT_EVENT]].to_numpy())
+    enc_next = get_one_hot_encoder(train_data[['next event']].to_numpy())
     
+    max_case_len = int(full_data[constants.CASE_STEP_NUMBER_COLUMN].max())
+    # max_case_len = 174
     train_data['amount requested normalized'], test_data['amount requested normalized'] = normalize(train_data[constants.AMOUNT_REQUESTED_COLUMN], test_data[constants.AMOUNT_REQUESTED_COLUMN])
     train_data['time since previous event'], test_data['time since previous event'] = normalize(train_data[constants.TIME_SINCE_PREVIOUS_EVENT], test_data[constants.TIME_SINCE_PREVIOUS_EVENT])
-    print("normalizing done")
+
     X_train, X_test = preprocess_event_X(train_data, enc, max_case_len), preprocess_event_X(test_data, enc, max_case_len)
 
     y_train_reg = train_data[constants.TIME_DIFFERENCE]
     y_test_reg = test_data[constants.TIME_DIFFERENCE]
     
-    y_train_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    y_test_clf = enc_next.transform(train_data[[constants.CASE_POSITION_COLUMN]]).toarray()
-    
-    reshaped = testing.reshape(len(test_data.index), max_case_len, num_of_features)
+    y_train_clf = enc_next.transform(train_data[['next event']]).toarray()
+    y_test_clf = enc_next.transform(train_data[['next event']]).toarray()
 
-    return X_train, y_train, X_test, y_test, enc_next
+    return X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc_next
 
 def train_event(X_train, y_train_clf, y_train_reg, epochs):
     """
@@ -168,7 +140,7 @@ def train_event(X_train, y_train_clf, y_train_reg, epochs):
     model_checkpoint = keras.callbacks.ModelCheckpoint('output_files/models/model_{epoch:02d}-{val_loss:.2f}.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto')
     lr_reducer = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
 
-    history = model.fit(X_train, {'event_output':y_train_clf, 'time_output':y_train_reg}, validation_split=0.2, verbose=2, callbacks=[early_stopping, model_checkpoint, lr_reducer], batch_size=max_sequence_len, epochs=epochs)
+    history = model.fit(X_train, {'event_output':y_train_clf, 'time_output':y_train_reg}, validation_split=0.2, verbose=1, callbacks=[early_stopping, model_checkpoint, lr_reducer], batch_size=max_sequence_len, epochs=epochs)
     ##################   OLD CODE   ##############################
     # model = Sequential()
     # model.add(keras.layers.LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
@@ -203,31 +175,33 @@ def train_event(X_train, y_train_clf, y_train_reg, epochs):
     plt.show()
 
     return model
+    
+def test_model(X_test, y_test_clf, y_test_reg, enc):
+    model = keras.models.load_model("LSTM_models/model_07-27919.88.h5")
+    pred_clf, pred_reg = model.predict(X_test)
+    pred_clf = enc.inverse_transform(pred_clf)
+    y_test_clf_dec = enc.inverse_transform(y_test_clf)
 
+    y_test_clf = pd.DataFrame(y_test_clf_dec, columns=[constants.NEXT_EVENT]).join(pd.DataFrame(pred_clf, columns=[constants.NEXT_EVENT_PREDICTION]))
+    classification_performance(y_test_clf, "Confusion_Matrices/conf_matrix_LSTM_test.png")
 
-def test(X_test, y_test, model, enc):
-    predictions = model.predict(X_test)
-    print(predictions)
-    # score = model.evaluate(X_test, y_test, verbose=0)
-    predictions = enc.inverse_transform(predictions)
-    y_test = enc.inverse_transform(y_test)
-
-    y_test = pd.DataFrame(y_test,columns=['next event']).join(pd.DataFrame(predictions, columns=['predicted next event']))
-
-    classification_performance(y_test, "Confusion_Matrices/LSTM.png")
+    y_test_reg = pd.DataFrame(y_test_reg.array, columns=[constants.TIME_DIFFERENCE]).join(pd.DataFrame(pred_reg.flatten(), columns=[constants.TIME_DIFFERENCE_PREDICTION]))
+    regression_performance(y_test_reg)
 
 def load_model(file):
     model = keras.models.load_model(file)
     return model
 
-def train_model(X_train, y_train, file=None):
+def train_model(X_train, y_train_clf, y_train_reg, epochs, file=None):
     model = train_event(X_train, y_train_clf, y_train_reg, epochs)
     if file:
         model.save(file)
     return model
 
 if __name__ == "__main__":
-    X_train, y_train, X_test, y_test, enc = preprocess_event()
-    model = train_model(X_train, y_train,'LSTM_models/class_model_more_inputs2.h5')
+    X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess_event()
+    # X_test = np.load("X_test.npy")
+    #test_model(X_test, y_test_clf, y_test_reg, enc)
+    model = train_model(X_train, y_train_clf,y_train_reg, 50)
     # model = load_model('LSTM_models/class_model_more_inputs.h5')
-    test(X_test, y_test, model, enc)
+    #test(X_test, y_test, model, enc)

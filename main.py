@@ -7,8 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import predictors_columns
 import global_vars
-import splitter, constants, baseline
-#import neural_network
+import splitter, constants, baseline, create_figures
 from performance_measures import time_execution
 import decision_tree
 import argparse
@@ -20,12 +19,10 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # timer.send("Time to convert dataset (in seconds): ")
 
     full_data = pd.read_csv(unprocessed_dataset)
-    full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
-        full_data[constants.CASE_TIMESTAMP_COLUMN])
 
     # ------- ONLY FOR TESTING ----------
 
-    # full_data = full_data[:400000]
+    # full_data = full_data[-100000:].reset_index(drop=True)
 
     # ------- END -----------------------
 
@@ -37,28 +34,37 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     data.to_csv(pipeline_dataset)
 
     train_data, test_data = splitter.split_dataset(data, 0.2)
-    splitter.time_series_split(train_data, 5)
+    # splitter.time_series_split(train_data, 5)
 
     timer.send("Time to split dataset (in seconds): ")
     
     # return train_data, test_data
 
-def read_data(pipeline_dataset):
+def read_data(pipeline_dataset, timer):
     data = pd.read_csv(pipeline_dataset)
     
     print(f"Average case duration: {max_four_digit_time_rep_accurate(compute_avg_case_duration(data))}")
     
+    data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
+        data[constants.CASE_TIMESTAMP_COLUMN])
+    data = data.astype({constants.NEXT_EVENT: 'str'})
     train_data, test_data = splitter.split_dataset(data, 0.2)
+    # splitter.time_series_split(train_data, 5)
+    timer.send("Time to read dataset (in seconds): ")
     return train_data, test_data
 
 def main(args):
     # Parsed arguments
     dataset = args.dataset
     generate = args.generate
-    
+    plots = args.plots
+
     # set up the timer
     timer = time_execution()
     timer.__next__()
+    
+    if plots:
+        warnings.warn('Plots are currently generated, This might take a while')
 
 
     # Condition in the dataset version
@@ -70,31 +76,35 @@ def main(args):
         # 2012 Dataset
         unprocessed_dataset = constants.CONVERTED_DATASET_PATH
         pipeline_dataset = constants.PIPELINED_DATASET_PATH
-        
+
 
     # Condition on whether to re-run the data preprocessing
     if(generate):
         # Includes calculation of predictors
         #train_data, test_data = prepare_data(unprocessed_dataset, pipeline_dataset, timer)
+        print('generating dataset....')
         prepare_data(unprocessed_dataset, pipeline_dataset, timer)
-    #else:
-    #    # Read the data from the file
-    train_data, test_data = read_data(pipeline_dataset)
+    print('reading dataset....')
+    train_data, test_data = read_data(pipeline_dataset, timer)
 
+    # FORWARD CHAINING EXAMPLE
+    # fc_train, fc_test = splitter.time_series_split(train_data, 5)
+    # for i in range(0, 4):
+    #     print("Tail of train of",i+1,":\n", fc_train[i].tail())
+    #     print("Tail of test of",i+1,":\n", fc_test[i].tail())
 
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
-       train_data, timer)
+        train_data, timer)
+
     # Evaluating the model
     baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, test_data, timer)
-    
+
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
 
-    # Neural Network
-    # neural_network.run_activity_model(train_data, test_data, timer)
-    
-
+    if plots:
+        create_figures.generate_plots()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -103,6 +113,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--generate", help="0 if the data should be read, 1 if it should be generated", default=0, type=int
+    )
+    parser.add_argument(
+        "--plots", help="0 if plots should not be generated, 1 if plots should be generated", default=0, type=int
     )
 
     args = parser.parse_args()

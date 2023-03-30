@@ -1,4 +1,4 @@
-# ----------------------DATASETS----------------------------------
+# ----------------------2012 DATASETS-------------------------------
 """The path to the raw dataset, in .xes.gz"""
 RAW_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
 """The path to the converted dataset, in .csv"""
@@ -6,19 +6,19 @@ CONVERTED_DATASET_PATH = './Datasets/BPI_Challenge_2012.csv'
 """The path to the dataset with added predictors, in .csv"""
 PIPELINED_DATASET_PATH = './Datasets/BPI_Challenge_2012_pipeline.csv'
 
-# 2017 DATASETS #
+# ----------------------2017 DATASETS-------------------------------
 """The path to the raw dataset, in .xes.gz"""
-RAW_2017_DATASET_PATH = './Datasets/BPI_Challenge_2012.xes.gz'
+RAW_2017_DATASET_PATH = './Datasets/BPI_Challenge_2017.xes.gz'
 """The path to the converted dataset, in .csv"""
 CONVERTED_2017_DATASET_PATH = './Datasets/BPI_Challenge_2017.csv'
 """The path to the dataset with added predictors, in .csv"""
 PIPELINED_2017_DATASET_PATH = './Datasets/BPI_Challenge_2017_pipeline.csv'
 
-# ----------------------ATTRIBUTES----------------------------------
+# ------------------------ATTRIBUTES--------------------------------
 """The identifier of dataset column holding the case ID."""
 CASE_ID_COLUMN = 'case:concept:name'
-"""The identifier of dataset column holding the case position/state."""
-CASE_POSITION_COLUMN = 'concept:name'
+"""The identifier of dataset column holding the current event name."""
+CURRENT_EVENT = 'concept:name'
 """The identifier of dataset column holding the timestamp."""
 CASE_TIMESTAMP_COLUMN = 'time:timestamp'
 """The identifier of dataset column counting the number of the current event in case."""
@@ -36,6 +36,7 @@ after the current event happens."""
 ACTIVE_CASES = 'active cases'
 """The identifier of dataset column holding the amount requested in the case."""
 AMOUNT_REQUESTED_COLUMN = 'case:AMOUNT_REQ'
+"""The identifier of dataset column holding the time since the start of the case."""
 TIME_SINCE_START_OF_CASE = 'case_relative_time'
 
 """TODO: put into pipeline predictor (see implementation in LSTM code)"""

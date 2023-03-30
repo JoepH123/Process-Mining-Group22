@@ -18,7 +18,6 @@ def classification_performance(data, conf_matrix_name):
     :type conf_matrix_name: string
     :return: None
     """
-    data[[constants.NEXT_EVENT, constants.NEXT_EVENT_PREDICTION]].astype('str')
     print("Accuracy score (next event): ", accuracy_score(
         data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str')))
     print("Number of misclassifications: ", accuracy_score(
@@ -71,14 +70,14 @@ def regression_performance(data):
             mean_squared_error(data[constants.TIME_DIFFERENCE], 
             data[constants.TIME_DIFFERENCE_PREDICTION], squared=False))
     data_no_zero = data[data[constants.TIME_DIFFERENCE] != 0]
-    RMSPE = max_four_digit_time_rep_accurate(np.sqrt(np.mean(
+    RMSPE = np.sqrt(np.mean(
         np.square(((data_no_zero[constants.TIME_DIFFERENCE] 
                     - data_no_zero[constants.TIME_DIFFERENCE_PREDICTION]) / 
-                   data_no_zero[constants.TIME_DIFFERENCE])), axis=0)))
+                   data_no_zero[constants.TIME_DIFFERENCE])), axis=0))
 
     print("Mean absolute error (time until next event): ", MAE)
     print("Root mean squared error: ", RMSE)
-    print("Root mean squared percentage error: ", RMSPE)
+    print("Root mean squared percentage error: ", RMSPE, "%")
 
 def time_execution():
     """A couroutine that prints a message it recieves through .send()

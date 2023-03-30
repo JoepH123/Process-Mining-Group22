@@ -42,8 +42,6 @@ def train_baseline_model(train_data_in, timer):
     # copy so we don't modify the original training set
     train_data = copy.deepcopy(train_data_in)
 
-    timer.send("Time to deepcopy (in seconds): ")
-
     # get the most frequent event for each case position
     next_event_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
         constants.NEXT_EVENT].agg(lambda x: clean_mode(pd.Series.mode(x))))
@@ -51,8 +49,6 @@ def train_baseline_model(train_data_in, timer):
         columns={constants.NEXT_EVENT: constants.NEXT_EVENT_PREDICTION}, inplace=True)
     train_data = train_data.merge(
         next_event_df, how='left', on=constants.CASE_STEP_NUMBER_COLUMN)
-
-    timer.send("Time to train baseline model classification (in seconds): ")
 
     # get the average of the time elapsed between the events at case positions i and i+1
     time_elapsed_df = pd.DataFrame(train_data.groupby(constants.CASE_STEP_NUMBER_COLUMN)[
@@ -68,7 +64,7 @@ def train_baseline_model(train_data_in, timer):
     train_data.dropna(inplace=True)
 
     # Setting the correct types
-    train_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
+    train_data = train_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
 
     # calculate performance for train set
     print("-------------------------------------------------------------------")
@@ -91,13 +87,14 @@ def evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, te
     # also remove missing values:
     test_data.dropna(inplace=True)
 
+    # Setting the correct types
+    test_data = test_data.astype({constants.NEXT_EVENT: 'str', constants.NEXT_EVENT_PREDICTION: 'str'})
+
     # calculate performance for test set
     print("-------------------------------------------------------------------")
     print('Test set:')
-    timer.send("Time to prepare for evaluation baseline model (in seconds): ")
 
     classification_performance(test_data, 'Confusion_Matrices/conf_matrix_baseline_test.png')
-    timer.send("Time to evaluate baseline model classification (in seconds): ")
     regression_performance(test_data)
     timer.send("Time to evaluate baseline model (in seconds): ")
     print("-------------------------------------------------------------------")

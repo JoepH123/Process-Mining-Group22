@@ -12,6 +12,9 @@ def convert_raw_dataset(raw_path, converted_path):
     :type raw_path: string
     :param converted_path: converted dataset path to save the result
     :type converted_path: string
+
+    :return: The converted dataframe
+    :rtype: dataframe
     """
     dataframe = pm4py.convert_to_dataframe(pm4py.read_xes(raw_path))
 
@@ -23,47 +26,11 @@ def convert_raw_dataset(raw_path, converted_path):
         dataframe[constants.CASE_TIMESTAMP_COLUMN])
 
     dataframe.sort_values(by=[constants.CASE_TIMESTAMP_COLUMN], inplace=True)
-
-    # get the event that follows the current one for each case (row), and the time elapsed
-    dataframe['time until next event'] = - dataframe.groupby(
-        constants.CASE_ID_COLUMN)[constants.CASE_TIMESTAMP_COLUMN].diff(-1).dt.total_seconds()
-    dataframe['next event'] = dataframe.groupby(
-        constants.CASE_ID_COLUMN)[constants.CASE_POSITION_COLUMN].shift(-1)
-
-    # get the number of the current event in the case (starts at 0)
-    dataframe[constants.CASE_STEP_NUMBER_COLUMN] = dataframe.groupby(
-        constants.CASE_ID_COLUMN).cumcount()
-
-    # how many events are left until the end of the case
-    dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] = dataframe.groupby(
-        constants.CASE_ID_COLUMN).cumcount(ascending=False)
-
-    # # get only the events that start or end a case
-    # countframe = dataframe[(dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0) |
-    #     (dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0)]
-
-    # how many cases start after the current event, inclusive
-    dataframe[constants.CASE_START_COUNT] = dataframe[
-        dataframe[constants.CASE_STEP_NUMBER_COLUMN] == 0].groupby(
-            constants.CASE_STEP_NUMBER_COLUMN).cumcount(ascending=False) + 1
-
-    # how many cases end before the current event, inclusive
-    dataframe[constants.CASE_END_COUNT] = dataframe[
-        dataframe[constants.CASE_STEP_NUMBER_INVERSE_COLUMN] == 0].groupby(
-            constants.CASE_STEP_NUMBER_INVERSE_COLUMN).cumcount() + 1
-
-    dataframe.at[-1, constants.CASE_START_COUNT] = 0
-    dataframe.at[0, constants.CASE_END_COUNT] = 0
-    dataframe[constants.CASE_START_COUNT].fillna(method='bfill', inplace = True)
-    dataframe[constants.CASE_END_COUNT].fillna(method='ffill', inplace = True)
+    dataframe.to_csv(converted_path)
 
     print("shape of converted dataset: ", dataframe.shape)
 
-    # Change column names if dataset is from 2017
-    if "case:AMOUNT_REQ" not in dataframe.columns and "case:RequestedAmount" in dataframe.columns:
-        dataframe.rename(columns={"case:RequestedAmount": "case:AMOUNT_REQ"}, inplace=True)
-
-    dataframe.to_csv(converted_path)
+    return dataframe
 
 def split_dataset(dataframe: pd.DataFrame, split_ratio: float):
     """Splits the given data frame into two parts,
@@ -150,11 +117,7 @@ def time_series_split(dataframe: pd.DataFrame, k: int):
         training_data.append(pd.concat(df_list_cumulative))
         test_data.append(partition_list[i+1])
 
-    # for frame in training_data:
-    #     print("Shape of train dataframe ", frame.shape)
-
-    # for frame in test_data:
-    #     print("Shape of test dataframe ", frame.shape)
+    return training_data, test_data
 
 
 if __name__ == "__main__":
