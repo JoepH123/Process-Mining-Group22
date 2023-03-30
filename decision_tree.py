@@ -243,7 +243,7 @@ def compare_all_models(train_data, test_data, timer):
 
     test_activity_model(test_data, rand_forest_class, cols)
     
-    timer.send("Time to evaluation random forest classifier (in seconds): ")
+    timer.send("Time to evaluate random forest classifier (in seconds): ")
 
     print("Linear Regression:")
     print("-----------------------------")

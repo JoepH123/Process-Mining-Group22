@@ -38,13 +38,14 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 
     return train_data, test_data
 
-def read_data(pipeline_dataset):
+def read_data(pipeline_dataset, timer):
     data = pd.read_csv(pipeline_dataset)
     data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         data[constants.CASE_TIMESTAMP_COLUMN])
     data = data.astype({constants.NEXT_EVENT: 'str'})
     train_data, test_data = splitter.split_dataset(data, 0.2)
     # splitter.time_series_split(train_data, 5)
+    timer.send("Time to read dataset (in seconds): ")
     return train_data, test_data
 
 def main(args):
@@ -77,7 +78,7 @@ def main(args):
     else:
         # Read the data from the file
         print('reading dataset....')
-        train_data, test_data = read_data(pipeline_dataset)
+        train_data, test_data = read_data(pipeline_dataset, timer)
 
     # FORWARD CHAINING EXAMPLE
     # fc_train, fc_test = splitter.time_series_split(train_data, 5)
