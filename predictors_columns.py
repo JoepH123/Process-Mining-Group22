@@ -2,7 +2,7 @@
 import pandas as pd
 import time
 import constants
-
+from tqdm import tqdm
 
 def compute_basic_features(dataframe):
     """Computes the basic features for the dataset such as next evet, case number, case count.
@@ -69,11 +69,11 @@ def compute_case_relative_time(data):
     nr_cases = len(all_cases) ###
     count = 0 ###
     
-    for case in all_cases:
+    for case in tqdm(all_cases):
         
         count += 1 ###
-        if count % 1000 == 0: ###
-            print(f"{(count / nr_cases) * 100}% Done") ###
+        #if count % 1000 == 0: ###
+        #    print(f"{(count / nr_cases) * 100}% Done") ###
         
         case_data = data[data[constants.CASE_ID_COLUMN] == case]
         number_of_rows = len(case_data.index)-1
@@ -115,7 +115,7 @@ def compute_case_lag_event_column(data, lag, column_name):
     data[column_name] = ''
     list_cases_with_lagged_column = []
     all_cases = data[constants.CASE_ID_COLUMN].unique().tolist()
-    for case in all_cases:
+    for case in tqdm(all_cases):
         case_data = data[data[constants.CASE_ID_COLUMN] == case].copy()
         case_data[column_name] = case_data[constants.CURRENT_EVENT].shift(lag, fill_value='no_lagged_events')
         list_cases_with_lagged_column.append(case_data)
@@ -147,11 +147,11 @@ def compute_workrate_employees(data):
     nr_cases = len(all_cases) ###
     count = 0 ###
     
-    for case in all_cases:
+    for case in tqdm(all_cases):
         
         count += 1 ###
-        if count % 1000 == 0: ###
-            print(f"{(count / nr_cases) * 100}% Done") ###
+        #if count % 1000 == 0: ###
+        #    print(f"{(count / nr_cases) * 100}% Done") ###
         
         case_data = data[data[constants.CASE_ID_COLUMN] == case]
         case_data.reset_index(inplace=True, drop=True)
@@ -178,7 +178,7 @@ def compute_workrate_employees(data):
     print('------------------------------------') ###
     print("Adding the workload as a column") ###
     
-    for i in range(len(data.index)):
+    for i in tqdm(range(len(data.index))):
         employee = data.loc[i, 'org:resource']
         data.loc[i, 'workrate'] = dict_workrate[str(employee)]
         
