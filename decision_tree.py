@@ -191,17 +191,6 @@ def compare_all_models(train_data, test_data, timer):
     plt.show()
     fig.savefig('Feature_importances/DT_feature_importance')
 
-    # results = permutation_importance(dec_tree_clas, train_data[cols], train_data[constants.TIME_DIFFERENCE],
-    #                                  n_repeats=10, random_state=500, n_jobs=-1)
-    # permutation_importances = pd.Series(results.importances_mean, index=cols)
-    # permutation_importances.sort_values(ascending=False)
-    #
-    # fig, ax = plt.subplots()
-    # permutation_importances.plot.bar(yerr=results.importances_std, ax=ax)
-    # ax.set_title('Feature permutation for the Decision Tree classifier')
-    # ax.set_ylabel('Mean accuracy decrease')
-    # plt.show()
-
     timer.send("Time to train decision tree classifier (in seconds): ")
 
     test_activity_model(test_data, dec_tree_clas, cols)
@@ -231,32 +220,21 @@ def compare_all_models(train_data, test_data, timer):
     plt.show()
     fig.savefig('Feature_importances/RF_classifier_feature_importance')
 
-    # results = permutation_importance(rand_forest_class, train_data[cols], train_data[constants.TIME_DIFFERENCE],
-    #                                  n_repeats=10, random_state=500, n_jobs=-1)
-    # permutation_importances = pd.Series(results.importances_mean, index=cols)
-    # permutation_importances.sort_values(ascending=False)
-    #
-    # fig, ax = plt.subplots()
-    # permutation_importances.plot.bar(yerr=results.importances_std, ax=ax)
-    # ax.set_title('Feature permutation for the random forest classifier')
-    # ax.set_ylabel('Mean accuracy decrease')
-    # plt.show()
-
     timer.send("Time to train random forest classifier (in seconds): ")
 
     test_activity_model(test_data, rand_forest_class, cols)
     
     timer.send("Time to evaluate random forest classifier (in seconds): ")
 
-    #print("MLP Classifier:")
-    #print("-----------------------------")
-    #print("Next activity:")
-    #clf = MLPClassifier()
-    #mlp_class = train_activity_model(train_data, clf, cols)
+    print("MLP Classifier:")
+    print("-----------------------------")
+    print("Next activity:")
+    clf = MLPClassifier()
+    mlp_class = train_activity_model(train_data, clf, cols)
 
-    #timer.send("Time to train MLP classifier (in seconds): ")
+    timer.send("Time to train MLP classifier (in seconds): ")
 
-    #test_activity_model(test_data, mlp_class, cols)
+    test_activity_model(test_data, mlp_class, cols)
     
     print("################################################################")
     print("##################### TIME TO NEXT EVENT #######################")
@@ -310,16 +288,6 @@ def compare_all_models(train_data, test_data, timer):
     fig.tight_layout()
     plt.show()
     fig.savefig('Feature_importances/RF_regressor_feature_importance')
-
-    # results = permutation_importance(rand_forest_regr, train_data[cols], train_data[constants.TIME_DIFFERENCE], n_repeats=10, random_state=500, n_jobs=-1)
-    # permutation_importances = pd.Series(results.importances_mean, index = cols)
-    # permutation_importances.sort_values(ascending = False)
-    #
-    # fig, ax = plt.subplots()
-    # permutation_importances.plot.bar(yerr = results.importances_std, ax = ax)
-    # ax.set_title('Feature permutation for the random forest regressor')
-    # ax.set_ylabel('Mean accuracy decrease')
-    # plt.show()
 
     timer.send("Time to train random forest regression (in seconds): ")
 
