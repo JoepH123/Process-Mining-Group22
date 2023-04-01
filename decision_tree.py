@@ -137,7 +137,8 @@ def test_time_model(test_data, clf, columns):
 
 def compare_all_models(train_data, test_data, timer):
     try:
-        train_data[['hours_since_week_start', 'hours_to_work_hours']]
+        # The test slice underneath is necessary to trigger the warning for which the try except statement was made
+        test_slice = train_data[['hours_since_week_start', 'hours_to_work_hours']]
         cols = [constants.CASE_STEP_NUMBER_COLUMN, constants.CASE_END_COUNT,
             'days_until_next_holiday', 'is_weekend', 
             'hours_since_week_start', 'is_work_time',
@@ -188,14 +189,14 @@ def compare_all_models(train_data, test_data, timer):
     timer.send("Time to train decision tree classifier (in seconds): ")
 
     test_activity_model(test_data, dec_tree_clas, cols, name="DT")
-    
+
     timer.send("Time to evaluate decision tree classifier (in seconds): ")
-    
+
     imps = dec_tree_clas.feature_importances_
     importances = pd.Series(imps, index=cols)
     importances.sort_values(ascending = False, inplace = True)
     importances = importances[:10]
-    
+
     fig, ax = plt.subplots()
     importances.plot.bar(ax=ax)
     ax.set_title('Feature importances for the Decision Tree classifier')
@@ -216,9 +217,9 @@ def compare_all_models(train_data, test_data, timer):
     timer.send("Time to train random forest classifier (in seconds): ")
 
     test_activity_model(test_data, rand_forest_class, cols, name="RF")
-    
+
     timer.send("Time to evaluate random forest classifier (in seconds): ")
-    
+
 
     imps = rand_forest_class.feature_importances_
     stds = np.std([tree.feature_importances_ for tree in rand_forest_class.estimators_], axis=0)
@@ -247,7 +248,7 @@ def compare_all_models(train_data, test_data, timer):
     timer.send("Time to train MLP classifier (in seconds): ")
 
     test_activity_model(test_data, mlp_class, cols, name="MLP")
-    
+
     timer.send("Time to test MLP classifier (in seconds): ")
     
     print("################################################################")
@@ -266,7 +267,7 @@ def compare_all_models(train_data, test_data, timer):
     test_time_model(test_data, lin_regr, cols)
 
     timer.send("Time to evaluate linear regression (in seconds): ")
-    
+
 
     coefs = lin_regr.coef_
     coefficients = pd.Series(coefs, index = cols)
@@ -294,7 +295,7 @@ def compare_all_models(train_data, test_data, timer):
     test_time_model(test_data, rand_forest_regr, cols)
 
     timer.send("Time to evaluate random forest regression (in seconds): ")
-    
+
 
     imps = rand_forest_regr.feature_importances_
     stds = np.std([tree.feature_importances_ for tree in rand_forest_regr.estimators_], axis = 0)

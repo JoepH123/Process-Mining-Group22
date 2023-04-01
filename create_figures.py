@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import splitter
 import dataframe_image as dfi
 import compute_and_convert_time as time_conversion
+import warnings
 
 
 def load_data(total_path=constants.PIPELINED_DATASET_PATH):
@@ -231,23 +232,54 @@ def compute_model_performances(train_data, test_data):
     test_data = copy.deepcopy(test_data)
     test_data['next_activity_id'] = pd.factorize(test_data[constants.NEXT_EVENT])[0]
 
-    train_data_dummies = train_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+    try:
+        train_data[['hours_since_week_start', 'hours_to_work_hours']]
+        train_data_dummies = train_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
                                            constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday',
-                                           'seconds_since_week_start', 'seconds_to_work_hours']]
-    for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
-                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday','seconds_since_week_start', 'seconds_to_work_hours']]:
-        train_data_dummies = train_data_dummies.join(pd.get_dummies(train_data[column]).add_prefix(column + '_'))
+                                           'hours_since_week_start', 'hours_to_work_hours']]
+        for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                           constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday','hours_since_week_start', 'hours_to_work_hours']]:
+            train_data_dummies = train_data_dummies.join(pd.get_dummies(train_data[column]).add_prefix(column + '_'))
 
 
-    test_data_dummies = test_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+        test_data_dummies = test_data[[constants.NEXT_EVENT, constants.TIME_DIFFERENCE, 'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
                                            constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday',
-                                           'seconds_since_week_start', 'seconds_to_work_hours']]
-    for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN, constants.CASE_STEP_NUMBER_COLUMN,
+                                           'hours_since_week_start', 'hours_to_work_hours']]
+        for column in [i for i in cols if i not in [constants.AMOUNT_REQUESTED_COLUMN, constants.CASE_STEP_NUMBER_COLUMN,
                                            'case start count',
                                            constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases',
                                            'days_until_next_holiday',
-                                           'seconds_since_week_start', 'seconds_to_work_hours']]:
-        test_data_dummies = test_data_dummies.join(pd.get_dummies(test_data[column]).add_prefix(column + '_'))
+                                           'hours_since_week_start', 'hours_to_work_hours']]:
+            test_data_dummies = test_data_dummies.join(pd.get_dummies(test_data[column]).add_prefix(column + '_'))
+
+    except:
+        train_data_dummies = train_data[[i for i in train_data.columns if i in [constants.NEXT_EVENT, constants.TIME_DIFFERENCE,
+                                                                               'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,
+                                                                               constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                                                               constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases', 'days_until_next_holiday',
+                                                                               'seconds_since_week_start', 'seconds_to_work_hours']]]
+
+        for column in [i for i in cols if
+                       i not in [constants.AMOUNT_REQUESTED_COLUMN, constants.CASE_STEP_NUMBER_COLUMN,
+                                 'case start count',
+                                 constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases',
+                                 'days_until_next_holiday', 'seconds_since_week_start', 'seconds_to_work_hours']]:
+            train_data_dummies = train_data_dummies.join(pd.get_dummies(train_data[column]).add_prefix(column + '_'))
+
+        test_data_dummies = test_data[[i for i in test_data.columns if i in [constants.NEXT_EVENT, constants.TIME_DIFFERENCE,
+                                             'next_activity_id', constants.AMOUNT_REQUESTED_COLUMN,
+                                             constants.CASE_STEP_NUMBER_COLUMN, 'case start count',
+                                             constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases',
+                                             'days_until_next_holiday',
+                                             'seconds_since_week_start', 'seconds_to_work_hours']]]
+
+        for column in [i for i in cols if
+                       i not in [constants.AMOUNT_REQUESTED_COLUMN, constants.CASE_STEP_NUMBER_COLUMN,
+                                 'case start count',
+                                 constants.TIME_SINCE_START_OF_CASE, 'workrate', 'active cases',
+                                 'days_until_next_holiday',
+                                 'seconds_since_week_start', 'seconds_to_work_hours']]:
+            test_data_dummies = test_data_dummies.join(pd.get_dummies(test_data[column]).add_prefix(column + '_'))
 
     for col in [column for column in train_data_dummies.columns if column not in test_data_dummies.columns]:
         test_data_dummies[col] = 0
@@ -353,7 +385,7 @@ def isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(RF_precisions[i - 1]),
     #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test precision performance against number of lags', fontsize=16)
     plt.ylabel('Precision')
     plt.xlabel('Number of lags included')
@@ -374,7 +406,7 @@ def isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(RF_accuracies[i - 1]),
     #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test accuracy performance against number of lags', fontsize=16)
     plt.ylabel('Accuracy')
     plt.xlabel('Number of lags included')
@@ -393,7 +425,7 @@ def isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
     #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test recall performance against number of lags', fontsize=16)
     plt.ylabel('Recall')
     plt.xlabel('Number of lags included')
@@ -412,7 +444,7 @@ def isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
     #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test f1-score performance against number of lags', fontsize=16)
     plt.ylabel('F1-score')
     plt.xlabel('Number of lags included')
@@ -663,7 +695,7 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(RF_precisions[i - 1]),
     #                  xy=(float(i) - 0.04, RF_precisions[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test precision performance against number of lags', fontsize=16)
     plt.ylabel('Precision')
     plt.xlabel('Number of lags included')
@@ -684,7 +716,7 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(RF_accuracies[i - 1]),
     #                  xy=(float(i) - 0.04, RF_accuracies[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test accuracy performance against number of lags', fontsize=16)
     plt.ylabel('Accuracy')
     plt.xlabel('Number of lags included')
@@ -703,7 +735,7 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(DT_recalls[i - 1]), xy=(float(i) - 0.04, DT_recalls[i - 1] + abs(y_max - y_min) * 0.03))
     #     plt.annotate(str(RF_recalls[i - 1]), xy=(float(i) - 0.04, RF_recalls[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test recall performance against number of lags', fontsize=16)
     plt.ylabel('Recall')
     plt.xlabel('Number of lags included')
@@ -722,7 +754,7 @@ def non_isolated_lags_plots(folder, n_lags = 10):
     #     plt.annotate(str(DT_f1s[i - 1]), xy=(float(i) - 0.04, DT_f1s[i - 1] + abs(y_max - y_min) * 0.03))
     #     plt.annotate(str(RF_f1s[i - 1]), xy=(float(i) - 0.04, RF_f1s[i - 1] + abs(y_max - y_min) * 0.03))
 
-    plt.legend(['Desicion Tree', 'Random Forest'])
+    plt.legend(['Decision Tree', 'Random Forest'])
     fig.suptitle('Model test f1-score performance against number of lags', fontsize=16)
     plt.ylabel('F1-score')
     plt.xlabel('Number of lags included')
