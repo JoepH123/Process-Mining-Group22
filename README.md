@@ -2,8 +2,11 @@
 Process Mining course project\
 *Made by group 22*
 
-This tool can be used to analyse the performance of 2 different methods using the BPI challenge datasets as the case study.\
-To run the tool, run the main.py file. This will run all necessary files.
+This tool can be used to analyse the performance of 2 different methods using the BPI challenge datasets as the case study.
+
+To run the tool, first the csv files should be generated using the `generate_2012.py` and the `generate_2017.py` respectively.\
+After this is done, run the `main.py` file. This will run all necessary files.
+
 
 To give more options, 3 different optional arguments can be provided when running the main file. These are:
 
@@ -20,4 +23,5 @@ To give more options, 3 different optional arguments can be provided when runnin
 ```
 Example usage, after the repository is put to the Process-Mining-Group22 folder:
 ```angular2html 
+py generate_2012.py
 py main.py --dataset 2012 --generate 0 --plots 0 ```
