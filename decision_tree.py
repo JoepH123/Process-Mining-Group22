@@ -324,21 +324,3 @@ def compare_all_models(train_data, test_data, timer):
     test_time_model(test_data, mlp_regr, cols)
 
     timer.send("Time to test MLP regressor (in seconds): ")
-    
-
-    imps = mlp_regr.feature_importances_
-    stds = np.std([tree.feature_importances_ for tree in rand_forest_regr.estimators_], axis = 0)
-    importances = pd.Series(imps, index = cols)
-    importances.sort_values(ascending=False, inplace = True)
-    importances = importances[:10]
-    std = pd.Series(stds, index=cols)
-
-    fig, ax = plt.subplots()
-    importances.plot.bar(yerr=std[importances.index], ax=ax)
-    ax.set_title('Feature importances for the random forest regressor')
-    ax.set_ylabel('Mean decrease in impurity')
-    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
-    fig.tight_layout()
-    #plt.show()
-    fig.savefig('Feature_importances/MLP_regressor_feature_importance')
-    plt.clf()
