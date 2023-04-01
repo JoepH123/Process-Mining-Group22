@@ -4,7 +4,7 @@ Process Mining course project\
 
 This tool can be used to analyse the performance of 2 different methods using the BPI challenge datasets as the case study.
 
-To run the tool, first the csv files should be generated using the `generate_2012.py` and the `generate_2017.py` respectively.\
+To run the tool, first the xes files should be converted to csv using the `generate_2012.py` and the `generate_2017.py` respectively.\
 After this is done, run the `main.py` file. This will run all necessary files.
 
 
