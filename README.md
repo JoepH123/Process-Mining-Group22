@@ -10,7 +10,7 @@ After this is done, run the `main.py` file. This will run all necessary files.
 
 To give more options, 3 different optional arguments can be provided when running the main file. These are:
 
-```angular2html
+```
 --dataset      This can be used to select the wanted BPI challenge dataset. Default is 2012, options are [2012, 2017]
 
 --generate     This can be used to select whether to generate the data from the starting CSV file
@@ -22,6 +22,7 @@ To give more options, 3 different optional arguments can be provided when runnin
                options are [0: the plots should **NOT** be generated, 1: the plots should be generated] 
 ```
 Example usage, after the repository is put to the Process-Mining-Group22 folder:
-```angular2html 
+```
 py generate_2012.py
-py main.py --dataset 2012 --generate 0 --plots 0 ```
+py main.py --dataset 2012 --generate 0 --plots 0 
+```
