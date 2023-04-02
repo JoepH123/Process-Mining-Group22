@@ -38,14 +38,14 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
     # splitter.time_series_split(train_data, 5)
 
     timer.send("Time to split dataset (in seconds): ")
-    
+
     # return train_data, test_data
 
 def read_data(pipeline_dataset, timer):
     data = pd.read_csv(pipeline_dataset)
-    
+
     print(f"Average case duration: {max_four_digit_time_rep_accurate(compute_avg_case_duration(data))}")
-    
+
     data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         data[constants.CASE_TIMESTAMP_COLUMN])
     data = data.astype({constants.NEXT_EVENT: 'str'})
@@ -59,11 +59,12 @@ def main(args):
     dataset = args.dataset
     generate = args.generate
     plots = args.plots
+    fc = args.fc
 
     # set up the timer
     timer = time_execution()
     timer.__next__()
-    
+
     if plots:
         warnings.warn('Plots are currently generated, This might take a while')
 
@@ -88,11 +89,21 @@ def main(args):
     print('reading dataset....')
     train_data, test_data = read_data(pipeline_dataset, timer)
 
-    # FORWARD CHAINING EXAMPLE
-    # fc_train, fc_test = splitter.time_series_split(train_data, 5)
-    # for i in range(0, 4):
-    #     print("Tail of train of",i+1,":\n", fc_train[i].tail())
-    #     print("Tail of test of",i+1,":\n", fc_test[i].tail())
+    # FORWARD CHAINING
+    # Used to separately train and evalate the models on increasing slices of data
+    # Warning: takes a long time
+    if (fc):
+        fc_train, fc_test = splitter.time_series_split(train_data, 5)
+        print('\n############# Calculating forward chaining stats... #############\n')
+        for i in range(0, 4):
+            print("Fold " + str(i+1))
+            print("Tail of train of",i+1,":\n", fc_train[i].tail())
+            print("Tail of test of",i+1,":\n", fc_test[i].tail())
+            baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
+            fc_train[i], timer)
+            baseline.evaluate_baseline_model(baseline_next_event_df, baseline_time_elapsed_df, fc_test[i], timer)
+            decision_tree.compare_all_models(fc_train[i], fc_test[i], timer)
+        print('\n############# End of forward chaining stats... #############\n')
 
     # BASELINE MODEL
     baseline_next_event_df, baseline_time_elapsed_df = baseline.train_baseline_model(
@@ -122,6 +133,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--plots", help="0 if plots should not be generated, 1 if plots should be generated", default=0, type=int
     )
-
+    parser.add_argument(
+        "--fc", help="0 if forward chaining stats should not be generated, 1 if forward chaining stats should be generated", default=0, type=int
+    )
     args = parser.parse_args()
     main(args)

@@ -26,7 +26,7 @@ def classification_performance(data, conf_matrix_name):
     
     # create confusion matrix
     cf_matrix = cm(data[constants.NEXT_EVENT].astype('str'), data[constants.NEXT_EVENT_PREDICTION].astype('str'))
-
+    
     # normalize the confusion matrix
     cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
     indices = list(set(data[constants.NEXT_EVENT].unique()) | set(data[constants.NEXT_EVENT_PREDICTION].unique()))
@@ -35,7 +35,8 @@ def classification_performance(data, conf_matrix_name):
 
     # plot the confusion matrix, add xticklabels=cf_df.columns, yticklabels=cf_df.index
     # as arguments to see the event names on the axes
-    ax = sns.heatmap(cf_df, annot=False, fmt='g', xticklabels=False, yticklabels=False, annot_kws={"fontsize":10})
+    fig, ax = plt.subplots()
+    sns.heatmap(cf_df, annot=False, fmt='g', xticklabels=False, yticklabels=False, annot_kws={"fontsize":10}, ax=ax)
     ax.set_title('Confusion Matrix \n')
     ax.set_xlabel('\nPredicted Values')
     ax.set_ylabel('Actual Values ')
@@ -44,7 +45,7 @@ def classification_performance(data, conf_matrix_name):
     fig = ax.get_figure()
     fig.savefig(conf_matrix_name)
     #plt.show()
-    #plt.clf()
+    plt.clf()
     
     print("Classification report: ", classification_report(data[constants.NEXT_EVENT].astype('str'), 
        data[constants.NEXT_EVENT_PREDICTION].astype('str'), zero_division=1))
