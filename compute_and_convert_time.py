@@ -61,14 +61,11 @@ def compute_avg_case_duration(data_with_time_column):
     :param data_with_time_column: A dataframe with the case_relative_time column
     :type data_with_time_column: pd.DataFrame
     """
-    all_cases = data_with_time_column[constants.CURRENT_EVENT].unique().tolist()
-    nr_cases = len(all_cases)
     total_duration = 0
-    for case in all_cases:
-        case_data = data_with_time_column[data_with_time_column[constants.CURRENT_EVENT] == case]
-        case_duration = case_data.case_relative_time.tolist()[-1]
+    for case in data_with_time_column.index:
+        case_duration = data_with_time_column.at[case, 'time until next event']
         total_duration += case_duration
-    avg_duration = total_duration / nr_cases
+    avg_duration = total_duration / len(data_with_time_column.index)
     return int(round(avg_duration, 0))
 
 # Time display functions

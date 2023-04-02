@@ -44,7 +44,7 @@ def prepare_data(unprocessed_dataset, pipeline_dataset, timer):
 def read_data(pipeline_dataset, timer):
     data = pd.read_csv(pipeline_dataset)
 
-    print(f"Average case duration: {max_four_digit_time_rep_accurate(compute_avg_case_duration(data))}")
+    print(f"Average case duration: {max_four_digit_time_rep_accurate(data['time until next event'].mean())}")
 
     data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         data[constants.CASE_TIMESTAMP_COLUMN])
