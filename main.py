@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import predictors_columns
 import global_vars
-import splitter, constants, baseline, create_figures
+import splitter, constants, baseline, create_figures, LSTM
 from performance_measures import time_execution
 import decision_tree
 import argparse
@@ -103,6 +103,10 @@ def main(args):
 
     # DECISION TREE AND RANDOM FOREST
     decision_tree.compare_all_models(train_data, test_data, timer)
+
+    # LSTM
+    if dataset==2012:
+        LSTM.test_LSTM(timer)
 
     if plots:
         create_figures.generate_plots()

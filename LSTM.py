@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import splitter
 import constants
 from sklearn.metrics import accuracy_score
-from performance_measures import classification_performance, regression_performance
+from performance_measures import classification_performance, regression_performance, time_execution
 
 plt.style.use('fivethirtyeight')
 
@@ -26,7 +26,7 @@ def normalize(train_data, test_data):
     train_std = train_data.std()
     return ((train_data - train_mean) / train_std), ((test_data - train_mean) / train_std)
 
-def preprocess_event_X(data, enc, max_case_len):
+def preprocess_X(data, enc, max_case_len):
     num_of_predictors = 2    # CHANGE THIS AS NEEDED, rn its time and amount requested
     
     # number of features is the total number of distinct events plus the
@@ -40,8 +40,6 @@ def preprocess_event_X(data, enc, max_case_len):
         event_sequence = []
         for index, row in group.iterrows():
             current_event = list(enc.transform(row[[constants.CURRENT_EVENT]].to_numpy().reshape(1, -1)).toarray()[0])
-            # print(current_event)
-            # print(row[[constants.CURRENT_EVENT]])
             current_event.append(row['amount requested normalized'])
             current_event.append(row['time since previous event'])
 
@@ -55,8 +53,7 @@ def preprocess_event_X(data, enc, max_case_len):
 
 
 
-def preprocess_event():
-    full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+def preprocess(full_data):
     full_data[constants.CASE_TIMESTAMP_COLUMN] = pd.to_datetime(
         full_data[constants.CASE_TIMESTAMP_COLUMN])
 
@@ -79,7 +76,7 @@ def preprocess_event():
     train_data['amount requested normalized'], test_data['amount requested normalized'] = normalize(train_data[constants.AMOUNT_REQUESTED_COLUMN], test_data[constants.AMOUNT_REQUESTED_COLUMN])
     train_data['time since previous event'], test_data['time since previous event'] = normalize(train_data[constants.TIME_SINCE_PREVIOUS_EVENT], test_data[constants.TIME_SINCE_PREVIOUS_EVENT])
 
-    X_train, X_test = preprocess_event_X(train_data, enc, max_case_len), preprocess_event_X(test_data, enc, max_case_len)
+    X_train, X_test = preprocess_X(train_data, enc, max_case_len), preprocess_X(test_data, enc, max_case_len)
 
     y_train_reg = train_data[constants.TIME_DIFFERENCE]
     y_test_reg = test_data[constants.TIME_DIFFERENCE]
@@ -176,9 +173,16 @@ def train_event(X_train, y_train_clf, y_train_reg, epochs):
 
     return model
     
-def test_model(X_test, y_test_clf, y_test_reg, enc):
-    model = keras.models.load_model("LSTM_models/model_07-27919.88.h5")
+def test_LSTM(timer):
+    full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+    X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess(full_data)
+    model = keras.models.load_model("LSTM_models/model_01-30651.65.h5")
+
+    timer.send("Time to preprocess LSTM (in seconds): ")
+
     pred_clf, pred_reg = model.predict(X_test)
+
+    timer.send("Time to predict LSTM (in seconds): ")
     pred_clf = enc.inverse_transform(pred_clf)
     y_test_clf_dec = enc.inverse_transform(y_test_clf)
 
@@ -188,20 +192,12 @@ def test_model(X_test, y_test_clf, y_test_reg, enc):
     y_test_reg = pd.DataFrame(y_test_reg.array, columns=[constants.TIME_DIFFERENCE]).join(pd.DataFrame(pred_reg.flatten(), columns=[constants.TIME_DIFFERENCE_PREDICTION]))
     regression_performance(y_test_reg)
 
-def load_model(file):
-    model = keras.models.load_model(file)
-    return model
+    timer.send("Time to test prediction LSTM (in seconds): ")
 
-def train_model(X_train, y_train_clf, y_train_reg, epochs, file=None):
+def train_LSTM(epochs, file=None):
+    full_data = pd.read_csv(constants.PIPELINED_DATASET_PATH)
+    X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess(full_data)
     model = train_event(X_train, y_train_clf, y_train_reg, epochs)
     if file:
         model.save(file)
     return model
-
-if __name__ == "__main__":
-    X_train, y_train_clf, y_train_reg, X_test, y_test_clf, y_test_reg, enc = preprocess_event()
-    # X_test = np.load("X_test.npy")
-    #test_model(X_test, y_test_clf, y_test_reg, enc)
-    model = train_model(X_train, y_train_clf,y_train_reg, 50)
-    # model = load_model('LSTM_models/class_model_more_inputs.h5')
-    #test(X_test, y_test, model, enc)
