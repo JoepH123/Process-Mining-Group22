@@ -19,7 +19,11 @@ To give more options, 3 different optional arguments can be provided when runnin
                
 --plots        This can be used to indicate whether the plots, which are on the poster should be generated.
                This might take a while. Default is 0 (they should not be generated), 
-               options are [0: the plots should **NOT** be generated, 1: the plots should be generated] 
+               options are [0: the plots should **NOT** be generated, 1: the plots should be generated]
+
+--fc           This can be used to indicate whether stats from forward chaining on the data, should be generated.
+               This might take a while. Default is 0 (they should not be generated), 
+               options are [0: the stats should **NOT** be generated, 1: the stats should be generated] 
 ```
 Example usage, after the repository is put to the Process-Mining-Group22 folder:
 ```
